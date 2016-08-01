@@ -181,18 +181,22 @@ def __RemoveTeardropsInList(pcb, tdlist):
             if line.rstrip() == z.GetLayerName() + ':' + ''.join(corners):
                 to_remove.append(z)
 
+    count = len(to_remove)
     for tbr in to_remove:
         pcb.Remove(tbr)
     #Remove the td file
     try:
-        os.remove(pcb.GetFilename() + '_td')
-    except:
+        os.remove(pcb.GetFileName() + '_td')
+    except OSError:
         pass
+
+    return count
 
 def __RemoveSelectedTeardrops(pcb, tdlist, sel):
     """Remove only the selected teardrops if mentionned in teardrops file.
        Also update the teardrops file"""
     print('Not implemented yet')
+    return 0
 
 def RmTeardrops():
     """Remove teardrops according to teardrops definition file"""
@@ -206,7 +210,6 @@ def RmTeardrops():
         #Only delete selected teardrops. We need to recompute the via structure
         #in order to found it in the viasfile and delete it
         count = __RemoveSelectedTeardrops(pcb, viasfile, vias_selected)
-        pass
     else:
         #Delete every teardrops mentionned in the teardrops file
         count = __RemoveTeardropsInList(pcb, viasfile)
