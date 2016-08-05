@@ -8,7 +8,7 @@
 import os, sys
 import argparse
 import fileinput
-from math import cos, sin, asin, radians
+from math import cos, sin, asin, atan2, degrees
 from pcbnew import *
 
 __version__ = "0.2.0"
@@ -87,7 +87,7 @@ def __Zone(viafile, board, points, track):
 
     return None
 
-def __Compute4Points(track, via, hpercent, vpercent):
+def __Compute5Points(track, via, hpercent, vpercent):
     """Del all teardrops referenced by the teardrop file"""
     start = track.GetStart()
     end = track.GetEnd()
@@ -98,34 +98,40 @@ def __Compute4Points(track, via, hpercent, vpercent):
         start, end = end, start
 
     # get normalized track vector
+    # it will be used a base vector pointing in the track direction
     pt = end - start
     norm = sqrt(pt.x * pt.x + pt.y * pt.y)
     vec = [t / norm for t in pt]
 
-    d = asin(vpercent/100.0);
-    vecB = [vec[0]*cos(d)+vec[1]*sin(d) , -vec[0]*sin(d)+vec[1]*cos(d)]
-    d = asin(-vpercent/100.0);
-    vecC = [vec[0]*cos(d)+vec[1]*sin(d) , -vec[0]*sin(d)+vec[1]*cos(d)]
 
     # find point on the track, sharp end of the teardrop
-    dist = via[1]*(1+hpercent/100.0)
-    pointA = start + wxPoint(int(vec[0] * dist), int(vec[1] * dist))
+    w = track.GetWidth()/2
+    radius = via[1]/2
+    n = radius*(1+hpercent/100.0)
+    dist = sqrt(n*n + w*w)
+    d = atan2(w, n)
+    vecB = [vec[0]*cos(d)+vec[1]*sin(d) , -vec[0]*sin(d)+vec[1]*cos(d)]
+    pointB = start + wxPoint(int(vecB[0] * dist), int(vecB[1] * dist))
+    vecA = [vec[0]*cos(-d)+vec[1]*sin(-d) , -vec[0]*sin(-d)+vec[1]*cos(-d)]
+    pointA = start + wxPoint(int(vecA[0] * dist), int(vecA[1] * dist))
+
+    # via side points
+    radius = via[1] / 2
+    d = asin(vpercent/100.0);
+    vecC = [vec[0]*cos(d)+vec[1]*sin(d) , -vec[0]*sin(d)+vec[1]*cos(d)]
+    d = asin(-vpercent/100.0);
+    vecE = [vec[0]*cos(d)+vec[1]*sin(d) , -vec[0]*sin(d)+vec[1]*cos(d)]
+    pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
+    pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
 
     # Introduce a last point in order to cover the via centre.
     # If not, the zone won't be filled
     vecD = [-vec[0], -vec[1]]
 
-    radius = via[1] / 2
-
-    # via side points
-    pointB = via[0] + wxPoint(int(vecB[0] * radius), int(vecB[1] * radius))
-    pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
-
-    # behind via center
     radius = (via[1]/2)*0.5 #50% of via radius is enough to include
     pointD = via[0] + wxPoint(int(vecD[0] * radius), int(vecD[1] * radius))
 
-    return (pointA, pointB, pointD, pointC)
+    return (pointA, pointB, pointC, pointD, pointE)
 
 def SetTeardrops(hpercent=30, vpercent=70):
     """Set teardrops on a teardrop free board"""
@@ -152,7 +158,7 @@ def SetTeardrops(hpercent=30, vpercent=70):
                 if track.IsPointOnEnds(via[0], via[1]/2):
                     if track.GetLength() < via[1]:
                             continue
-                    coor = __Compute4Points(track, via, hpercent, vpercent)
+                    coor = __Compute5Points(track, via, hpercent, vpercent)
                     the_zone = __Zone(viasfile, pcb, coor, track)
                     if the_zone:
                         pcb.Add(the_zone)
