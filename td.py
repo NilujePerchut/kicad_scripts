@@ -11,7 +11,7 @@ import fileinput
 from math import cos, acos, sin, asin, tan, atan2, degrees
 from pcbnew import *
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 ToUnits=ToMM
 FromUnits=FromMM
