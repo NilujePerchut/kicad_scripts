@@ -32,8 +32,8 @@ import td
 td.RmTeardrops()
 </pre>
 
-**To-do**: Use arcs instead of direct lines.
-
-**Notice**: SetTeardrops accepts two optional parameters: hpercent and vpercent.<br>
-This paramters define the teardrop dimensions (relative to via/pad size) according to the Altium way (for via only):
-http://techdocs.altium.com/sites/default/files/wiki_attachments/235632/TeardropsDlg.png
+**Notice**: SetTeardrops accepts three optional parameters: hpercent, vpercent, segs.<br>
+Segs defines the number of segments in one teardrop curve (default = 10). Setting segs=2 will disable curved teardrops and use straight line instead.<br>
+Vpercent (default 70%) and hpercent (default 30%) define the teardrop dimensions (relative to via/pad size) according to the Altium way (for via only):
+http://techdocs.altium.com/sites/default/files/wiki_attachments/235632/TeardropsDlg.png<br>
+When curved teardrops are selected (segs>2), the vpercent maximum is 70%.
