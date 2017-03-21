@@ -16,7 +16,7 @@ cd path_to_the_td.py_script_location
 import td
 td.SetTeardrops()
 </pre>
-3. Rebuild all zones (by typing "b").
+3. Rebuild all zones (by typing "b").<br>
 4. In order to make teardrops appear, just select the current canvas mode in the Display Menu.
 
 **Delete Teardrops:**<br>
