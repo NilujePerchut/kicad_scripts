@@ -11,7 +11,7 @@ import fileinput
 from math import cos, acos, sin, asin, tan, atan2, degrees
 from pcbnew import *
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 ToUnits=ToMM
 FromUnits=FromMM
@@ -73,8 +73,9 @@ def __Zone(viafile, board, points, track):
 
     line=[]
     for p in points:
-        z.AppendCorner(p)
+        z.Outline().AppendCorner(p.x, p.y)
         line.append(str(p))
+    z.Outline().CloseLastContour()
 
     line.sort()
     z.BuildFilledSolidAreasPolygons(board)
@@ -262,26 +263,3 @@ def RmTeardrops():
         count = __RemoveTeardropsInList(pcb, viasfile)
 
     print('{0} teardrops removed'.format(count))
-
-if __name__ == '__main__':
-    """This part fixes polygon closing parenthis"""
-    parser = argparse.ArgumentParser(description='Fix kicad pcb for teardrops')
-    parser.add_argument('pcbfile', metavar='F', type=str, help='file to fix')
-    args = parser.parse_args()
-
-    state = 'SEARCH'
-    for line in fileinput.FileInput(args.pcbfile, inplace=True):
-        if state == 'SEARCH':
-            if '(polygon' in line:
-                state = 'COUNTING'
-                delta = 1
-        elif state == 'COUNTING':
-            if ('(filled_polygon' in line) and (delta > 0):
-                print('    )')
-                state = 'SEARCH'
-            if ('(zone (' in line) and (delta == 0):
-                print('    )')
-                state = 'SEARCH'
-            else:
-                delta = delta + line.count('(') - line.count(')')
-        print(line.rstrip())

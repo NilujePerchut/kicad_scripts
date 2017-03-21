@@ -16,13 +16,8 @@ cd path_to_the_td.py_script_location
 import td
 td.SetTeardrops()
 </pre>
-3. Rebuild all zones (by typing "b"), save the pcb, and quit pcbnew.<br>
-  This will corrupt the kicad_pcb file due to a Kicad bug in polygon closing parenthis.<br>
-4. Use the "__main__" method to fix the pcb file as follow:
-<br><pre>
-./td.py pcb_file_to_be_fixed
-</pre>
-5. re-open the pcb file in pcbnew, teardrops should be there !<br>
+3. Rebuild all zones (by typing "b").
+4. In order to make teardrops appear, just select the current canvas mode in the Display Menu.
 
 **Delete Teardrops:**<br>
 1. Open the script console and type:
