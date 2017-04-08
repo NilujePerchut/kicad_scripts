@@ -181,8 +181,9 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10):
     pcb = GetBoard()
     td_filename = pcb.GetFileName() + '_td'
 
-    vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, [PAD_STANDARD])[0]
-    vias_selected = __GetAllVias(pcb)[1] + __GetAllPads(pcb, [PAD_STANDARD])[1]
+    vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[0]
+    vias_selected = __GetAllVias(pcb)[1] +\
+                    __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[1]
     viasfile = __File2List(td_filename)
     if len(vias_selected) > 0:
         print('Using selected pads/vias')
@@ -252,7 +253,8 @@ def RmTeardrops():
     pcb = GetBoard()
     td_filename = pcb.GetFileName() + '_td'
     viasfile = __File2List(td_filename)
-    vias_selected = __GetAllVias(pcb)[1] + __GetAllPads(pcb, [PAD_STANDARD])[1]
+    vias_selected = __GetAllVias(pcb)[1] +\
+                                 __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[1]
 
     if len(vias_selected) > 0:
         #Only delete selected teardrops. We need to recompute the via structure
