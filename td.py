@@ -199,9 +199,11 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10):
         if type(track) == TRACK:
             for via in vias:
                 if track.IsPointOnEnds(via[0], via[1]/2):
-                    if track.GetLength() < via[1]:
-                            continue
-                    coor = __ComputePoints(track, via, hpercent, vpercent, segs)
+                    if (track.GetLength() < via[1]) or\
+                        (track.GetWidth() >= via[1] * vpercent / 100.0):
+                        continue
+                    coor = __ComputePoints(track, via, hpercent, vpercent,
+                                           segs)
                     the_zone = __Zone(viasfile, pcb, coor, track)
                     if the_zone:
                         pcb.Add(the_zone)
