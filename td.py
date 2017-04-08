@@ -53,7 +53,7 @@ def __GetAllPads(board, filters=[]):
         pad = board.GetPad(i)
         if pad.GetAttribute() in filters:
             pos = pad.GetPosition()
-            drill = pad.GetDrillSize().x + FromUnits(0.2 * 2)
+            drill = min(pad.GetSize())
             pads.append((pos, drill ))
             if pad.IsSelected():
                 pads_selected.append((pos, drill))
