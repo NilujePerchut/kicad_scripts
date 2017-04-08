@@ -227,7 +227,8 @@ def __RemoveTeardropsInList(pcb, tdlist):
     to_remove=[]
     for line in tdlist:
         for z in [ pcb.GetArea(i) for i in range(pcb.GetAreaCount()) ]:
-            corners = [str(z.GetCornerPosition(i)) for i in range(z.GetNumCorners())]
+            corners = [str(z.GetCornerPosition(i))
+                       for i in range(z.GetNumCorners())]
             corners.sort()
             if line.rstrip() == z.GetLayerName() + ':' + ''.join(corners):
                 to_remove.append(z)
