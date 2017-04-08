@@ -218,6 +218,9 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10):
         except IOError:
             #There was no file at startup and no teardrop to add
             pass
+        except OSError:
+            #There was no file at startup and no teardrop to add
+            pass
 
     print('{0} teardrops inserted'.format(count))
 
