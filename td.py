@@ -6,6 +6,7 @@
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 
 import os
+import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD
@@ -63,6 +64,14 @@ def __GetAllPads(board, filters=[]):
     return pads, pads_selected
 
 
+def __Zone2Fileline(zone):
+    fmt_els = zone.Outline().Format().split("\n")
+    size = int(fmt_els[2])
+    pts_els = ["({0}, {1})".format(*p.split()) for p in fmt_els[3:3+size]]
+    pts_els.sort()
+    return zone.GetLayerName() + ":" + "".join(pts_els)
+
+
 def __Zone(viafile, board, points, track):
     """Add a zone to the board"""
     z = ZONE_CONTAINER(board)
@@ -74,18 +83,22 @@ def __Zone(viafile, board, points, track):
     z.SetMinThickness(25400)  # The minimum
     z.SetPadConnection(2)  # 2 -> solid
     z.SetIsFilled(True)
+    ol = z.Outline()
+    ol.NewOutline()
 
     line = []
     for p in points:
-        z.Outline().AppendCorner(p.x, p.y)
+        ol.Append(p.x, p.y)
         line.append(str(p))
-    z.Outline().CloseLastContour()
+        sys.stdout.write("+")
+    if len(line) > 0:
+        print("")
 
     line.sort()
     z.BuildFilledSolidAreasPolygons(board)
 
     # Save zone properties
-    vialine = track.GetLayerName() + ':' + ''.join(line)
+    vialine = __Zone2Fileline(z)
     if vialine not in viafile:
         viafile.append(vialine)
         return z
@@ -106,6 +119,13 @@ def __Bezier(p1, p2, p3, n=20.0):
         y = int(a * p1[1] + b * p2[1] + c * p3[1])
         pts.append(wxPoint(x, y))
     return pts
+
+
+def __TeardropLength(track, via, hpercent):
+    """Computes the teardrop length"""
+    n = min(track.GetLength(), (via[1] - track.GetWidth()) * 1.2071)
+    n = max(via[1]*(0.5+hpercent/200.0), n)
+    return n
 
 
 def __ComputeCurved(vpercent, w, vec, via, pts, segs):
@@ -141,7 +161,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
 
     # ensure that start is at the via/pad end
     d = end - via[0]
-    if sqrt(d.x * d.x + d.y * d.y) < via[1]:
+    if sqrt(d.x * d.x + d.y * d.y) < via[1]/2.0:
         start, end = end, start
 
     # get normalized track vector
@@ -153,7 +173,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     # find point on the track, sharp end of the teardrop
     w = track.GetWidth()/2
     radius = via[1]/2
-    n = radius*(1+hpercent/100.0)
+    n = __TeardropLength(track, via, hpercent)
     dist = sqrt(n*n + w*w)
     d = atan2(w, n)
     vecB = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
@@ -207,8 +227,9 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10):
         if type(track) == TRACK:
             for via in vias:
                 if track.IsPointOnEnds(via[0], via[1]/2):
-                    if (track.GetLength() < via[1]) or\
-                       (track.GetWidth() >= via[1] * vpercent / 100.0):
+                    if (track.GetLength() < __TeardropLength(track, via,
+                                                             hpercent)) or\
+                       (track.GetWidth() >= via[1] * vpercent / 100):
                         continue
                     coor = __ComputePoints(track, via, hpercent, vpercent,
                                            segs)
@@ -239,10 +260,7 @@ def __RemoveTeardropsInList(pcb, tdlist):
     to_remove = []
     for line in tdlist:
         for z in [pcb.GetArea(i) for i in range(pcb.GetAreaCount())]:
-            corners = [str(z.GetCornerPosition(i))
-                       for i in range(z.GetNumCorners())]
-            corners.sort()
-            if line.rstrip() == z.GetLayerName() + ':' + ''.join(corners):
+            if line.rstrip() == __Zone2Fileline(z):
                 to_remove.append(z)
 
     count = len(to_remove)
