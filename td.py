@@ -11,7 +11,7 @@ from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 ToUnits = ToMM
 FromUnits = FromMM
@@ -83,6 +83,7 @@ def __Zone(viafile, board, points, track):
     z.SetMinThickness(25400)  # The minimum
     z.SetPadConnection(2)  # 2 -> solid
     z.SetIsFilled(True)
+    z.SetPriority(127)  # Teardrops must be drawn with a high priority
     ol = z.Outline()
     ol.NewOutline()
 
