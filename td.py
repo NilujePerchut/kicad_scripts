@@ -11,27 +11,12 @@ from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD
 
-__version__ = "0.3.4"
+__version__ = "0.4.0"
 
 ToUnits = ToMM
 FromUnits = FromMM
 
-
-def __File2List(filename):
-    try:
-        f = open(filename, 'r')
-        listfile = [l.rstrip() for l in f]
-    except IOError:
-        return []
-    f.close()
-    return listfile
-
-
-def __List2File(thelist, filename):
-    f = open(filename, 'w')
-    for l in thelist:
-        f.write(l+'\n')
-    f.close()
+MAGIC_TEARDROP_ZONE_ID = 0x4242
 
 
 def __GetAllVias(board):
@@ -64,15 +49,30 @@ def __GetAllPads(board, filters=[]):
     return pads, pads_selected
 
 
-def __Zone2Fileline(zone):
-    fmt_els = zone.Outline().Format().split("\n")
-    size = int(fmt_els[2])
-    pts_els = ["({0}, {1})".format(*p.split()) for p in fmt_els[3:3+size]]
-    pts_els.sort()
-    return zone.GetLayerName() + ":" + "".join(pts_els)
+def __GetAllTeardrops(board):
+    """Just retrieves all teardrops of the current board classified by net"""
+    teardrops_zones = {}
+    for zone in [board.GetArea(i) for i in range(board.GetAreaCount())]:
+        if zone.GetPriority() == MAGIC_TEARDROP_ZONE_ID:
+            netname = zone.GetNetname()
+            if netname not in teardrops_zones.keys():
+                teardrops_zones[netname] = []
+            teardrops_zones[netname].append(zone)
+    return teardrops_zones
 
 
-def __Zone(viafile, board, points, track):
+def __DoesTeardropBelongTo(teardrop, track, via):
+    """Return True if the teardrop covers given track AND via"""
+    # First test if the via belongs to the teardrop
+    if not teardrop.HitTestInsideZone(via[0]):
+        return False
+    # In a second time, test if the track belongs to the teardrop
+    if not track.HitTest(teardrop.GetBoundingBox().GetCenter()):
+        return False
+    return True
+
+
+def __Zone(board, points, track):
     """Add a zone to the board"""
     z = ZONE_CONTAINER(board)
 
@@ -83,28 +83,18 @@ def __Zone(viafile, board, points, track):
     z.SetMinThickness(25400)  # The minimum
     z.SetPadConnection(2)  # 2 -> solid
     z.SetIsFilled(True)
-    z.SetPriority(127)  # Teardrops must be drawn with a high priority
+    z.SetPriority(MAGIC_TEARDROP_ZONE_ID)
     ol = z.Outline()
     ol.NewOutline()
 
-    line = []
     for p in points:
         ol.Append(p.x, p.y)
-        line.append(str(p))
-        sys.stdout.write("+")
-    if len(line) > 0:
-        print("")
 
-    line.sort()
+    sys.stdout.write("+")
+
     z.BuildFilledSolidAreasPolygons(board)
 
-    # Save zone properties
-    vialine = __Zone2Fileline(z)
-    if vialine not in viafile:
-        viafile.append(vialine)
-        return z
-
-    return None
+    return z
 
 
 def __Bezier(p1, p2, p3, n=20.0):
@@ -213,91 +203,43 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10):
     vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[0]
     vias_selected = __GetAllVias(pcb)[1] +\
         __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[1]
-    viasfile = __File2List(td_filename)
     if len(vias_selected) > 0:
         print('Using selected pads/vias')
         vias = vias_selected
-    else:
-        # If a teardrop file is present AND no pad are selected,
-        # remove all teardrops.
-        if len(viasfile) > 0:
-            RmTeardrops()
+
+    teardrops = __GetAllTeardrops(pcb)
 
     count = 0
-    for track in pcb.GetTracks():
-        if type(track) == TRACK:
-            for via in vias:
-                if track.IsPointOnEnds(via[0], via[1]/2):
-                    if (track.GetLength() < __TeardropLength(track, via,
-                                                             hpercent)) or\
-                       (track.GetWidth() >= via[1] * vpercent / 100):
-                        continue
-                    coor = __ComputePoints(track, via, hpercent, vpercent,
-                                           segs)
-                    the_zone = __Zone(viasfile, pcb, coor, track)
-                    if the_zone:
-                        pcb.Add(the_zone)
-                        count = count + 1
+    for track in [t for t in pcb.GetTracks() if type(t)==TRACK]:
+        for via in [v for v in vias if track.IsPointOnEnds(v[0], v[1]/2)]:
+            if (track.GetLength() < __TeardropLength(track, via, hpercent)) or\
+               (track.GetWidth() >= via[1] * vpercent / 100):
+                continue
 
-    if len(viasfile) > 0:
-        __List2File(viasfile, td_filename)
-    else:
-        # Just remove the file
-        try:
-            os.remove(td_filename)
-        except IOError:
-            # There was no file at startup and no teardrop to add
-            pass
-        except OSError:
-            # There was no file at startup and no teardrop to add
-            pass
+            found = False
+            if track.GetNetname() in teardrops.keys():
+                for teardrop in teardrops[track.GetNetname()]:
+                    if __DoesTeardropBelongTo(teardrop, track, via):
+                        found = True
+                        break
+
+            if not found:
+                coor = __ComputePoints(track, via, hpercent, vpercent, segs)
+                pcb.Add(__Zone(pcb, coor, track))
+                count += 1
 
     print('{0} teardrops inserted'.format(count))
 
 
-def __RemoveTeardropsInList(pcb, tdlist):
-    """Remove all teardrops mentioned in the list if available in current PCB.
-       Returns number of deleted pads"""
-    to_remove = []
-    for line in tdlist:
-        for z in [pcb.GetArea(i) for i in range(pcb.GetAreaCount())]:
-            if line.rstrip() == __Zone2Fileline(z):
-                to_remove.append(z)
-
-    count = len(to_remove)
-    for tbr in to_remove:
-        pcb.Remove(tbr)
-    # Remove the td file
-    try:
-        os.remove(pcb.GetFileName() + '_td')
-    except OSError:
-        pass
-
-    return count
-
-
-def __RemoveSelectedTeardrops(pcb, tdlist, sel):
-    """Remove only the selected teardrops if mentionned in teardrops file.
-       Also update the teardrops file"""
-    print('Not implemented yet')
-    return 0
-
-
 def RmTeardrops():
-    """Remove teardrops according to teardrops definition file"""
+    """Remove all teardrops"""
 
     pcb = GetBoard()
-    td_filename = pcb.GetFileName() + '_td'
-    viasfile = __File2List(td_filename)
-    vias_selected = __GetAllVias(pcb)[1] +\
-        __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[1]
-
-    if len(vias_selected) > 0:
-        # Only delete selected teardrops. We need to recompute the via
-        # structure in order to found it in the viasfile and delete it
-        count = __RemoveSelectedTeardrops(pcb, viasfile, vias_selected)
-    else:
-        # Delete every teardrops mentionned in the teardrops file
-        count = __RemoveTeardropsInList(pcb, viasfile)
+    count = 0
+    teardrops = __GetAllTeardrops(pcb)
+    for netname in teardrops:
+        for teardrop in teardrops[netname]:
+            pcb.Remove(teardrop)
+            count += 1
 
     print('{0} teardrops removed'.format(count))
