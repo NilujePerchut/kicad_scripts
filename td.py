@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Teardrop for pcbnew using filled zones
-# (c) Niluje 2016 thewireddoesntexist.org
+# (c) Niluje 2017 thewireddoesntexist.org
 #
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 
