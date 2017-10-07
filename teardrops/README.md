@@ -5,7 +5,7 @@ Based on https://github.com/svofski/kicad-teardrops.<br>
 This implementation uses zones instead of arcs. This allows to comply with DRC rules by simply rebuild all zones. You can also modify their shape by simply modifying the zone outline (like any other zone).
 Teardrops created with this script use a specific priority (0x42) to be recognized as teardrops.
 
-![alt tag](/rcs/screenshot.png?raw=true "Teardrop menu")
+![Teardrop dialog](rcs/screenshot.png?raw=true "Teardrop menu")
 
 ## Install
 Just copy the teardop folder into the ~/.kicad_plugins directory, then restart Kicad. The teardrop plugin should now be available in the Tools/External plugin menu.
