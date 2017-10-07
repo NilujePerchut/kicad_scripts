@@ -194,17 +194,16 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     return pts
 
 
-def SetTeardrops(hpercent=30, vpercent=70, segs=10):
+def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None):
     """Set teardrops on a teardrop free board"""
 
-    pcb = GetBoard()
-    td_filename = pcb.GetFileName() + '_td'
+    if pcb is None:
+        pcb = GetBoard()
 
     vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[0]
     vias_selected = __GetAllVias(pcb)[1] +\
         __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[1]
     if len(vias_selected) > 0:
-        print('Using selected pads/vias')
         vias = vias_selected
 
     teardrops = __GetAllTeardrops(pcb)
@@ -229,12 +228,15 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10):
                 count += 1
 
     print('{0} teardrops inserted'.format(count))
+    return count
 
 
-def RmTeardrops():
+def RmTeardrops(pcb=None):
     """Remove all teardrops"""
 
-    pcb = GetBoard()
+    if pcb is None:
+        pcb = GetBoard()
+
     count = 0
     teardrops = __GetAllTeardrops(pcb)
     for netname in teardrops:
@@ -243,3 +245,4 @@ def RmTeardrops():
             count += 1
 
     print('{0} teardrops removed'.format(count))
+    return count
