@@ -11,7 +11,7 @@ from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 ToUnits = ToMM
 FromUnits = FromMM
@@ -91,8 +91,10 @@ def __Zone(board, points, track):
         ol.Append(p.x, p.y)
 
     sys.stdout.write("+")
-
-    z.BuildFilledSolidAreasPolygons(board)
+    # BuildFilledSolidAreasPolygons is not supported anymore
+    # Wait until V5 release before looking for solutions
+    # For now: just hit b after the script to fill all zones
+    #z.BuildFilledSolidAreasPolygons(board)
 
     return z
 

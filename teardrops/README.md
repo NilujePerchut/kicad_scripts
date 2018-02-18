@@ -3,7 +3,7 @@
 This action plugin adds and deletes teardrops to a PCB.<br>
 Based on https://github.com/svofski/kicad-teardrops.<br>
 This implementation uses zones instead of arcs. This allows to comply with DRC rules by simply rebuild all zones. You can also modify their shape by simply modifying the zone outline (like any other zone).
-Teardrops created with this script use a specific priority (0x42) to be recognized as teardrops.
+Teardrops created with this script use a specific priority (0x4242) to be recognized as teardrops.
 
 ![Teardrop dialog](rcs/screenshot.png?raw=true "Teardrop menu")
 
