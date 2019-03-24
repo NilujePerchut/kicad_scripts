@@ -7,8 +7,8 @@
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 
 import wx
-from teardrop_gui import teardrop_gui
-from td import SetTeardrops, RmTeardrops, __version__
+from teardrops.teardrop_gui import teardrop_gui
+from teardrops.td import SetTeardrops, RmTeardrops, __version__
 
 class TeardropDialog(teardrop_gui):
     """Class that gathers all the Gui control"""

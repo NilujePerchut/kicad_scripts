@@ -29,3 +29,9 @@ In order for a zone to be recognized as teardrop by the script, the zone must me
 
 ## Note 2:
 It is still possible to use the old form of this script (non action plugin). The td.py script remains fully functional for independant use.
+
+## Note 3:
+Newly inserted vias are not visible immediadly due to a bug in Kicad/pcbnew refresh system. The following sequence is recommended after teardrop insertion:
+1. Save the pcb design
+2. Quit pcbnew
+3. Reopen the design in pcbnew

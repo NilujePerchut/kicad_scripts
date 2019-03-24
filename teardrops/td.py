@@ -9,9 +9,9 @@ import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD
+from pcbnew import PAD_ATTRIB_STANDARD, ZONE_FILLER
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 ToUnits = ToMM
 FromUnits = FromMM
@@ -38,7 +38,7 @@ def __GetAllPads(board, filters=[]):
     """Just retreive all pads from the given board"""
     pads = []
     pads_selected = []
-    for i in xrange(board.GetPadCount()):
+    for i in range(board.GetPadCount()):
         pad = board.GetPad(i)
         if pad.GetAttribute() in filters:
             pos = pad.GetPosition()
@@ -91,11 +91,6 @@ def __Zone(board, points, track):
         ol.Append(p.x, p.y)
 
     sys.stdout.write("+")
-    # BuildFilledSolidAreasPolygons is not supported anymore
-    # Wait until V5 release before looking for solutions
-    # For now: just hit b after the script to fill all zones
-    #z.BuildFilledSolidAreasPolygons(board)
-
     return z
 
 
@@ -196,6 +191,12 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     return pts
 
 
+def RebuildAllZones(pcb):
+    """Rebuilt all zones"""
+    filler = ZONE_FILLER(pcb)
+    filler.Fill(pcb.Zones())
+
+
 def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None):
     """Set teardrops on a teardrop free board"""
 
@@ -209,10 +210,9 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None):
         vias = vias_selected
 
     teardrops = __GetAllTeardrops(pcb)
-
     count = 0
     for track in [t for t in pcb.GetTracks() if type(t)==TRACK]:
-        for via in [v for v in vias if track.IsPointOnEnds(v[0], v[1]/2)]:
+        for via in [v for v in vias if track.IsPointOnEnds(v[0], int(v[1]/2))]:
             if (track.GetLength() < __TeardropLength(track, via, hpercent)) or\
                (track.GetWidth() >= via[1] * vpercent / 100):
                 continue
@@ -229,6 +229,7 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None):
                 pcb.Add(__Zone(pcb, coor, track))
                 count += 1
 
+    RebuildAllZones(pcb)
     print('{0} teardrops inserted'.format(count))
     return count
 
@@ -246,5 +247,6 @@ def RmTeardrops(pcb=None):
             pcb.Remove(teardrop)
             count += 1
 
+    RebuildAllZones(pcb)
     print('{0} teardrops removed'.format(count))
     return count

@@ -1,2 +1,2 @@
-from teardrop_plugin import TeardropPlugin
+from teardrops.teardrop_plugin import TeardropPlugin
 TeardropPlugin().register()

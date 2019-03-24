@@ -9,7 +9,7 @@
 import wx
 from pcbnew import ActionPlugin, GetBoard
 
-from teardrop_dialog import InitTeardropDialog
+from teardrops.teardrop_dialog import InitTeardropDialog
 
 class TeardropPlugin(ActionPlugin):
     """Class that gathers the actionplugin stuff"""
