@@ -33,29 +33,29 @@ class teardrop_gui ( wx.Dialog ):
 		self.st_hpercent = wx.StaticText( self, wx.ID_ANY, u"Horizontal percent", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.st_hpercent.Wrap( -1 )
 
-		gs_params.Add( self.st_hpercent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, 5 )
+		gs_params.Add( self.st_hpercent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND, 5 )
 
 		self.sp_hpercent = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 0, 100, 30 )
-		gs_params.Add( self.sp_hpercent, 0, wx.ALL|wx.SHAPED, 5 )
+		gs_params.Add( self.sp_hpercent, 0, wx.EXPAND|wx.SHAPED, 5 )
 
 		self.st_vpercent = wx.StaticText( self, wx.ID_ANY, u"Vertical percent", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.st_vpercent.Wrap( -1 )
 
-		gs_params.Add( self.st_vpercent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, 5 )
+		gs_params.Add( self.st_vpercent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND, 5 )
 
 		self.sp_vpercent = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 0, 100, 70 )
-		gs_params.Add( self.sp_vpercent, 0, wx.ALL|wx.SHAPED, 5 )
+		gs_params.Add( self.sp_vpercent, 0, wx.EXPAND|wx.SHAPED, 5 )
 
 		self.st_nbseg = wx.StaticText( self, wx.ID_ANY, u"Number of segments", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.st_nbseg.Wrap( -1 )
 
-		gs_params.Add( self.st_nbseg, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.ALL, 5 )
+		gs_params.Add( self.st_nbseg, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND, 5 )
 
 		self.sp_nbseg = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 2, 100, 10 )
-		gs_params.Add( self.sp_nbseg, 0, wx.ALL|wx.SHAPED, 5 )
+		gs_params.Add( self.sp_nbseg, 0, wx.EXPAND|wx.SHAPED, 5 )
 
 
-		bvs_main.Add( gs_params, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND|wx.SHAPED, 5 )
+		bvs_main.Add( gs_params, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.EXPAND|wx.SHAPED, 5 )
 
 		bhs_modal = wx.BoxSizer( wx.HORIZONTAL )
 
