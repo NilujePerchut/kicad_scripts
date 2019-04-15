@@ -11,7 +11,7 @@ from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD, ZONE_FILLER
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 ToUnits = ToMM
 FromUnits = FromMM
