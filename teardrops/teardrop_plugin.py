@@ -2,7 +2,7 @@
 
 # Teardrop for pcbnew using filled zones
 # This is the action plugin interface
-# (c) Niluje 2017 thewireddoesntexist.org
+# (c) Niluje 2019 thewireddoesntexist.org
 #
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 
