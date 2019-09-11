@@ -7,6 +7,7 @@
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
 
 import wx
+import os
 from pcbnew import ActionPlugin, GetBoard
 
 from teardrops.teardrop_dialog import InitTeardropDialog
@@ -17,6 +18,7 @@ class TeardropPlugin(ActionPlugin):
         self.name = "Teardrops"
         self.category = "Modify PCB"
         self.description = "Manages teardrops on a PCB"
+        self.icon_file_name = os.path.join(os.path.dirname(__file__), 'teardrops.png')
 
     def Run(self):
         InitTeardropDialog(GetBoard())
