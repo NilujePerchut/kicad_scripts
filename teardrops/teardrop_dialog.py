@@ -9,8 +9,8 @@
 import wx
 import pcbnew
 
-from teardrop_gui import teardrop_gui
-from td import SetTeardrops, RmTeardrops, __version__
+from .teardrop_gui import teardrop_gui
+from .td import SetTeardrops, RmTeardrops, __version__
 
 class TeardropDialog(teardrop_gui):
     """Class that gathers all the Gui control"""

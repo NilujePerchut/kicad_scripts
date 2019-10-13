@@ -10,7 +10,7 @@ import wx
 import os
 from pcbnew import ActionPlugin, GetBoard
 
-from teardrop_dialog import InitTeardropDialog
+from .teardrop_dialog import InitTeardropDialog
 
 class TeardropPlugin(ActionPlugin):
     """Class that gathers the actionplugin stuff"""
@@ -19,6 +19,7 @@ class TeardropPlugin(ActionPlugin):
         self.category = "Modify PCB"
         self.description = "Manages teardrops on a PCB"
         self.icon_file_name = os.path.join(os.path.dirname(__file__), 'teardrops.png')
+        self.show_toolbar_button = True
 
     def Run(self):
         InitTeardropDialog(GetBoard())
