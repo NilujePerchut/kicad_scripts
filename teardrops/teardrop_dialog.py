@@ -8,6 +8,7 @@
 
 import wx
 import pcbnew
+import os
 
 from .teardrop_gui import teardrop_gui
 from .td import SetTeardrops, RmTeardrops, __version__
@@ -24,6 +25,7 @@ class TeardropDialog(teardrop_gui):
         self.Bind(wx.EVT_CLOSE, self.onCloseWindow)
         self.but_cancel.Bind(wx.EVT_BUTTON, self.onCloseWindow)
         self.but_ok.Bind(wx.EVT_BUTTON, self.onProcessAction)
+        self.m_bitmap_help.SetBitmap(wx.Bitmap( os.path.join(os.path.dirname(os.path.realpath(__file__)), "rcs", "teardrops-help.png") ) )
 
     def onAction(self, e):
         """Enables or disables the parameters elements"""
