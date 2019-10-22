@@ -26,6 +26,7 @@ class TeardropDialog(teardrop_gui):
         self.but_cancel.Bind(wx.EVT_BUTTON, self.onCloseWindow)
         self.but_ok.Bind(wx.EVT_BUTTON, self.onProcessAction)
         self.m_bitmap_help.SetBitmap(wx.Bitmap( os.path.join(os.path.dirname(os.path.realpath(__file__)), "rcs", "teardrops-help.png") ) )
+        self.SetMinSize(self.GetSize())
 
     def onAction(self, e):
         """Enables or disables the parameters elements"""
