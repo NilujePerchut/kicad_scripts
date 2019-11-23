@@ -9,7 +9,7 @@ import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD, ZONE_FILLER
+from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER
 
 __version__ = "0.4.5"
 
@@ -28,9 +28,10 @@ def __GetAllVias(board):
             pos = item.GetPosition()
             width = item.GetWidth()
             drill = item.GetDrillValue()
-            vias.append((pos, width, drill))
+            layer = "all"
+            vias.append((pos, width, drill, layer))
             if item.IsSelected():
-                vias_selected.append((pos, width, drill))
+                vias_selected.append((pos, width, drill, layer))
     return vias, vias_selected
 
 
@@ -43,9 +44,17 @@ def __GetAllPads(board, filters=[]):
         if pad.GetAttribute() in filters:
             pos = pad.GetPosition()
             drill = min(pad.GetSize())
-            pads.append((pos, drill))
+            """See where the pad is"""
+            if pad.GetAttribute() == PAD_ATTRIB_SMD:
+                if pad.IsOnLayer(0):
+                    layer = "front"
+                else:
+                    layer = "back"
+            else:
+                layer = "all"
+            pads.append((pos, drill, 0, layer))
             if pad.IsSelected():
-                pads_selected.append((pos, drill))
+                pads_selected.append((pos, drill, 0, layer))
     return pads, pads_selected
 
 
@@ -203,9 +212,8 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None):
     if pcb is None:
         pcb = GetBoard()
 
-    vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[0]
-    vias_selected = __GetAllVias(pcb)[1] +\
-        __GetAllPads(pcb, [PAD_ATTRIB_STANDARD])[1]
+    vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, [PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD])[0]
+    vias_selected = __GetAllVias(pcb)[1] + __GetAllPads(pcb, [PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD])[1]
     if len(vias_selected) > 0:
         vias = vias_selected
 
@@ -223,6 +231,18 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None):
                     if __DoesTeardropBelongTo(teardrop, track, via):
                         found = True
                         break
+                    
+            """Only when the pad and track are on the same layer do we add this"""
+            if via[3] == "all":
+                sys.stdout.write("A")
+            elif via[3] == "front":
+                sys.stdout.write("F")
+                if not track.IsOnLayer(0):
+                    continue
+            elif via[3] == "back":
+                sys.stdout.write("B")
+                if track.IsOnLayer(0):
+                    continue
 
             if not found:
                 coor = __ComputePoints(track, via, hpercent, vpercent, segs)
