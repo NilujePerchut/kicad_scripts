@@ -29,10 +29,11 @@ class TeardropDialog(teardrop_gui):
         self.SetMinSize(self.GetSize())
 
     def onAction(self, e):
-        """Enables or disables the parameters elements"""
-        params_group = [self.st_hpercent, self.sp_hpercent, self.st_vpercent,
-                        self.sp_vpercent, self.st_nbseg, self.sp_nbseg]
-        for i, el in enumerate(params_group):
+        """Enables or disables the parameters/options elements"""
+        els = [self.st_hpercent, self.sp_hpercent, self.st_vpercent,
+               self.sp_vpercent, self.st_nbseg, self.sp_nbseg,
+               self.cb_include_smd_pads]
+        for i, el in enumerate(els):
             if self.rbx_action.GetSelection() == 0:
                 el.Enable()
             else:
@@ -44,7 +45,8 @@ class TeardropDialog(teardrop_gui):
             count = SetTeardrops(self.sp_hpercent.GetValue(),
                                  self.sp_vpercent.GetValue(),
                                  self.sp_nbseg.GetValue(),
-                                 self.board)
+                                 self.board,
+                                 self.cb_include_smd_pads.IsChecked())
             wx.MessageBox("{0} Teardrops inserted".format(count))
         else:
             count = RmTeardrops(pcb=self.board)
