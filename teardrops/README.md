@@ -17,6 +17,7 @@ Segs defines the number of segments in one teardrop curve (default = 10). Settin
 Vpercent (default 70%) and hpercent (default 30%) define the teardrop dimensions (relative to via/pad size) according to the Altium way (for via only):
 http://techdocs.altium.com/sites/default/files/wiki_attachments/235632/TeardropsDlg.png<br>
 When curved teardrops are selected (segs>2), the vpercent maximum is 70%.
+If the "Include SMD pads" option is checked, SMD pads will also get teardrops.
 
 ## Remove all teardrops
 This will remove all the teardrops from the PCB.<br>
@@ -29,9 +30,3 @@ In order for a zone to be recognized as teardrop by the script, the zone must me
 
 ## Note 2:
 It is still possible to use the old form of this script (non action plugin). The td.py script remains fully functional for independant use.
-
-## Note 3:
-Newly inserted vias are not visible immediadly due to a bug in Kicad/pcbnew refresh system. The following sequence is recommended after teardrop insertion:
-1. Save the pcb design
-2. Quit pcbnew
-3. Reopen the design in pcbnew
