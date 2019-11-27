@@ -19,7 +19,12 @@ class teardrop_gui ( wx.Dialog ):
 	def __init__( self, parent ):
 		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Teardrops", pos = wx.DefaultPosition, size = wx.Size( 410,291 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
 
-		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
+		#self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
+		import sys
+		if sys.version_info[0] == 2:
+			self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		else:
+			self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
 		bvs_main = wx.BoxSizer( wx.VERTICAL )
 
