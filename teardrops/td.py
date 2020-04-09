@@ -238,7 +238,7 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False):
                         found = True
                         break
 
-            # Discard case where pad and track are on different layers, or the pad have no layer at all (paste pads).
+            # Discard case where pad and track are on different layers, or the pad have no copper at all (paste pads).
             if (via[3] == "none"):
                 continue
             if (via[3] == "front") and (not track.IsOnLayer(0)):
