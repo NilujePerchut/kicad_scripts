@@ -11,7 +11,7 @@ from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER
 
-__version__ = "0.4.6"
+__version__ = "0.4.7"
 
 ToUnits = ToMM
 FromUnits = FromMM
@@ -46,10 +46,15 @@ def __GetAllPads(board, filters=[]):
             drill = min(pad.GetSize())
             """See where the pad is"""
             if pad.GetAttribute() == PAD_ATTRIB_SMD:
-                if pad.IsOnLayer(0):
+                lset = pad.GetLayerSet()
+                lseq = lset.Seq()
+                """lseq contains the sequence of layers"""
+                if lseq[0] == 0:
                     layer = "front"
-                else:
+                elif lseq[0] == 31:
                     layer = "back"
+                else:
+                    layer = "none"
             else:
                 layer = "all"
             pads.append((pos, drill, 0, layer))
@@ -233,7 +238,9 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False):
                         found = True
                         break
 
-            # Discard case where pad and track are not on the same layer
+            # Discard case where pad and track are on different layers, or the pad have no copper at all (paste pads).
+            if (via[3] == "none"):
+                continue
             if (via[3] == "front") and (not track.IsOnLayer(0)):
                 continue
             if (via[3] == "back") and track.IsOnLayer(0):
