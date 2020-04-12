@@ -32,7 +32,7 @@ class TeardropDialog(teardrop_gui):
         """Enables or disables the parameters/options elements"""
         els = [self.st_hpercent, self.sp_hpercent, self.st_vpercent,
                self.sp_vpercent, self.st_nbseg, self.sp_nbseg,
-               self.cb_include_smd_pads]
+               self.cb_include_smd_pads, self.cb_discard_in_same_zone]
         for i, el in enumerate(els):
             if self.rbx_action.GetSelection() == 0:
                 el.Enable()
@@ -46,7 +46,8 @@ class TeardropDialog(teardrop_gui):
                                  self.sp_vpercent.GetValue(),
                                  self.sp_nbseg.GetValue(),
                                  self.board,
-                                 self.cb_include_smd_pads.IsChecked())
+                                 self.cb_include_smd_pads.IsChecked(),
+                                 self.cb_discard_in_same_zone.IsChecked())
             wx.MessageBox("{0} Teardrops inserted".format(count))
         else:
             count = RmTeardrops(pcb=self.board)

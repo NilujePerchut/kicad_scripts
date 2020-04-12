@@ -9,9 +9,9 @@ import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER
+from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
 
-__version__ = "0.4.7"
+__version__ = "0.4.8"
 
 ToUnits = ToMM
 FromUnits = FromMM
@@ -205,13 +205,32 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     return pts
 
 
+def __IsViaAndTrackInSameNetZone(pcb, via, track):
+    """Return True if the given via + track is located inside a zone of the
+    same netname"""
+    for zone in [pcb.GetArea(i) for i in range(pcb.GetAreaCount())]:
+        # Exclude other Teardrops to speed up the process
+        if zone.GetPriority() == MAGIC_TEARDROP_ZONE_ID:
+            continue
+
+        # Only consider zones on the same layer
+        if not zone.IsOnLayer(track.GetLayer()):
+            continue
+
+        if (zone.GetNetname() == track.GetNetname()):
+            if zone.Outline().Contains(VECTOR2I(*via[0])):
+                return True
+    return False
+
+
 def RebuildAllZones(pcb):
     """Rebuilt all zones"""
     filler = ZONE_FILLER(pcb)
     filler.Fill(pcb.Zones())
 
 
-def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False):
+def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False,
+                 discard_in_same_zone=True):
     """Set teardrops on a teardrop free board"""
 
     if pcb is None:
@@ -244,6 +263,12 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False):
             if (via[3] == "front") and (not track.IsOnLayer(0)):
                 continue
             if (via[3] == "back") and track.IsOnLayer(0):
+                continue
+
+            # Discard case where pad/via is within a zone with the same netname
+            # WARNING: this can severly reduce performances
+            if discard_in_same_zone and \
+               __IsViaAndTrackInSameNetZone(pcb, via, track):
                 continue
 
             if not found:

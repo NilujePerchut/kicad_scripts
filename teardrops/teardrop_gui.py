@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################################
-## Python code generated with wxFormBuilder (version 3.9.0 Nov 23 2019)
+## Python code generated with wxFormBuilder (version Apr 12 2020)
 ## http://www.wxformbuilder.org/
 ##
 ## PLEASE DO *NOT* EDIT THIS FILE!
@@ -17,7 +17,7 @@ import wx.xrc
 class teardrop_gui ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Teardrops", pos = wx.DefaultPosition, size = wx.Size( 410,291 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Teardrops", pos = wx.DefaultPosition, size = wx.Size( 410,323 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
 
 		#self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 		import sys
@@ -77,6 +77,13 @@ class teardrop_gui ( wx.Dialog ):
 
 		self.cb_include_smd_pads = wx.CheckBox( self, wx.ID_ANY, u"Include SMD pads", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bvs_options.Add( self.cb_include_smd_pads, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 5 )
+
+		self.cb_discard_in_same_zone = wx.CheckBox( self, wx.ID_ANY, u"Do not insert teardrop inside same net zones", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.cb_discard_in_same_zone.SetValue(True)
+		bvs_options.Add( self.cb_discard_in_same_zone, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 5 )
+
+
+		bvs_options.Add( ( 0, 0), 1, wx.EXPAND, 5 )
 
 
 		bvs_main.Add( bvs_options, 1, wx.EXPAND, 5 )
