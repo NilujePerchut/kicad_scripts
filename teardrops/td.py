@@ -28,7 +28,7 @@ def __GetAllVias(board):
             pos = item.GetPosition()
             width = item.GetWidth()
             drill = item.GetDrillValue()
-            layer = "all"
+            layer = -1
             vias.append((pos, width, drill, layer))
             if item.IsSelected():
                 vias_selected.append((pos, width, drill, layer))
@@ -46,17 +46,11 @@ def __GetAllPads(board, filters=[]):
             drill = min(pad.GetSize())
             """See where the pad is"""
             if pad.GetAttribute() == PAD_ATTRIB_SMD:
-                lset = pad.GetLayerSet()
-                lseq = lset.Seq()
-                """lseq contains the sequence of layers"""
-                if lseq[0] == 0:
-                    layer = "front"
-                elif lseq[0] == 31:
-                    layer = "back"
-                else:
-                    layer = "none"
+                # Cannot use GetLayer here because it returns the non-flipped
+                # layer. Need to get the real layer from the layer set
+                layer = pad.GetLayerSet().CuStack()[0]
             else:
-                layer = "all"
+                layer = -1
             pads.append((pos, drill, 0, layer))
             if pad.IsSelected():
                 pads_selected.append((pos, drill, 0, layer))
@@ -257,12 +251,9 @@ def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False,
                         found = True
                         break
 
-            # Discard case where pad and track are on different layers, or the pad have no copper at all (paste pads).
-            if (via[3] == "none"):
-                continue
-            if (via[3] == "front") and (not track.IsOnLayer(0)):
-                continue
-            if (via[3] == "back") and track.IsOnLayer(0):
+            # Discard case where pad and track are on different layers, or the
+            # pad have no copper at all (paste pads).
+            if (via[3] != -1) and (via[3] != track.GetLayer()):
                 continue
 
             # Discard case where pad/via is within a zone with the same netname
