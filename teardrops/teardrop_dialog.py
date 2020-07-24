@@ -62,5 +62,5 @@ class TeardropDialog(teardrop_gui):
 def InitTeardropDialog(board):
     """Launch the dialog"""
     tg = TeardropDialog(board)
-    tg.Show(True)
+    tg.ShowModal()
     return tg
