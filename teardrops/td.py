@@ -48,7 +48,11 @@ def __GetAllPads(board, filters=[]):
             if pad.GetAttribute() == PAD_ATTRIB_SMD:
                 # Cannot use GetLayer here because it returns the non-flipped
                 # layer. Need to get the real layer from the layer set
-                layer = pad.GetLayerSet().CuStack()[0]
+                cu_stack = pad.GetLayerSet().CuStack()
+                if len(cu_stack) == 0:
+                    # The pad is not on a Copper layer
+                    continue
+                layer = cu_stack[0]
             else:
                 layer = -1
             pads.append((pos, drill, 0, layer))
