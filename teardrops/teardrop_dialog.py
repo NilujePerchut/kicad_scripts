@@ -53,10 +53,10 @@ class TeardropDialog(teardrop_gui):
             count = RmTeardrops(pcb=self.board)
             wx.MessageBox("{0} Teardrops removed".format(count))
         pcbnew.Refresh() #Show up newly added vias
-        self.Destroy()
+        self.EndModal(wx.ID_OK)
 
     def onCloseWindow(self, event):
-        self.Destroy()
+        self.EndModal(wx.ID_OK)
 
 
 def InitTeardropDialog(board):
