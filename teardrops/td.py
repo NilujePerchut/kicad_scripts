@@ -7,7 +7,7 @@
 
 import os
 import sys
-from math import cos, acos, sin, asin, tan, atan2, sqrt
+from math import cos, acos, sin, asin, tan, atan2, sqrt, pi
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I, STARTPOINT, ENDPOINT
 
@@ -122,18 +122,13 @@ def __Bezier(p1, p2, p3, p4, n=20.0):
     return pts
 
 
-def __TeardropLength(track, via, hpercent, backoff):
-    """Computes the teardrop length"""
-    return min(via[1]*(hpercent/100.0), track.GetLength() - backoff)
-
-
 def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     """Compute the curves part points"""
 
     minVpercent = float(w*2) / float(via[1])
     biasVia = (vpercent/100.0  -minVpercent) / (1-minVpercent)
 
-    biasTrack = tlength
+    biasTrack = tlength*0.5
 
     vecC = (pts[2] - via[0])
     tangentC = [ pts[2][0] - vecC[1]*biasVia, pts[2][1] + vecC[0]*biasVia ]
@@ -147,6 +142,16 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     curve2 = __Bezier(pts[4], tangentE, tangentA, pts[0], n=segs)
 
     return curve1 + [pts[3]] + curve2
+
+
+def __AngleDifference(a,b):
+    """Return the signed angle between two vectors"""
+    t = atan2(b[1], b[0]) - atan2(a[1], a[0])
+    if t > pi/2:
+        t -= pi
+    if t < -pi/2:
+        t += pi
+    return t
 
 
 def __ComputePoints(track, via, hpercent, vpercent, segs):
@@ -184,18 +189,30 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
 
     # find point on the track, sharp end of the teardrop
     w = track.GetWidth()/2
-    
-    n = __TeardropLength(track, via, hpercent, backoff)
+
+    # teardrop length
+    n = min(via[1]*(hpercent/100.0), track.GetLength() - backoff)
 
     pointB = start + wxPoint( vec[0]*n +vec[1]*w , vec[1]*n -vec[0]*w )
     pointA = start + wxPoint( vec[0]*n -vec[1]*w , vec[1]*n +vec[0]*w )
 
+
+    dC = asin(vpercent/100.0)
+    dE = asin(-vpercent/100.0)
+
+    offsetVec = via[0] - start
+    adjAngle = __AngleDifference(vec, offsetVec)
+
+    if adjAngle>0:
+        dE -= adjAngle
+    else:
+        dC -= adjAngle
+
     # via side points
     radius = via[1] / 2
-    d = asin(vpercent/100.0)
-    vecC = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    d = asin(-vpercent/100.0)
-    vecE = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
+
+    vecC = [vec[0]*cos(dC)+vec[1]*sin(dC), -vec[0]*sin(dC)+vec[1]*cos(dC)]
+    vecE = [vec[0]*cos(dE)+vec[1]*sin(dE), -vec[0]*sin(dE)+vec[1]*cos(dE)]
     pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
     pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
 
