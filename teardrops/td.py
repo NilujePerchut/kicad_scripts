@@ -106,17 +106,18 @@ def __Zone(board, points, track):
     return z
 
 
-def __Bezier(p1, p2, p3, n=20.0):
+def __Bezier(p1, p2, p3, p4, n=20.0):
     n = float(n)
     pts = []
     for i in range(int(n)+1):
         t = i/n
-        a = (1.0 - t) ** 2
-        b = 2.0*t*(1.0-t)
-        c = t**2
+        a = (1.0 - t)**3
+        b = 3.0 * t * (1.0-t)**2
+        c = 3.0 * t**2 * (1.0-t)
+        d = t**3
 
-        x = int(a * p1[0] + b * p2[0] + c * p3[0])
-        y = int(a * p1[1] + b * p2[1] + c * p3[1])
+        x = int(a * p1[0] + b * p2[0] + c * p3[0] + d * p4[0])
+        y = int(a * p1[1] + b * p2[1] + c * p3[1] + d * p4[1])
         pts.append(wxPoint(x, y))
     return pts
 
@@ -133,19 +134,16 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs):
 
     radius = via[1]/2.0
 
-    # Compute the bezier middle points
-    req_angle = asin(vpercent/100.0)
-    oppside = tan(req_angle)*(radius-(w/sin(req_angle)))
-    length = sqrt(radius*radius + oppside*oppside)
-    d = req_angle - acos(radius/length)
-    vecBC = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    pointBC = via[0] + wxPoint(int(vecBC[0] * length), int(vecBC[1] * length))
-    d = -d
-    vecAE = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    pointAE = via[0] + wxPoint(int(vecAE[0] * length), int(vecAE[1] * length))
+    vecC = (pts[2] - via[0])
+    tangentC = [ pts[2][0] - vecC[1], pts[2][1] + vecC[0] ]
+    vecE = (pts[4] - via[0])
+    tangentE = [ pts[4][0] + vecE[1], pts[4][1] - vecE[0] ]
 
-    curve1 = __Bezier(pts[1], pointBC, pts[2], n=segs)
-    curve2 = __Bezier(pts[4], pointAE, pts[0], n=segs)
+    tangentB = [pts[1][0] - vec[0]*radius, pts[1][1] - vec[1]*radius]
+    tangentA = [pts[0][0] - vec[0]*radius, pts[0][1] - vec[1]*radius]
+
+    curve1 = __Bezier(pts[1], tangentB, tangentC, pts[2], n=segs)
+    curve2 = __Bezier(pts[4], tangentE, tangentA, pts[0], n=segs)
 
     return curve1 + [pts[3]] + curve2
 
@@ -154,10 +152,6 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     """Compute all teardrop points"""
     start = track.GetStart()
     end = track.GetEnd()
-
-    if (segs > 2) and (vpercent > 70.0):
-        # If curved via are selected, max angle is 45 degres --> 70%
-        vpercent = 70.0
 
     # ensure that start is at the via/pad end
     d = end - via[0]
@@ -170,9 +164,23 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     norm = sqrt(pt.x * pt.x + pt.y * pt.y)
     vec = [t / norm for t in pt]
 
+    radius = via[1]/2
+
+    # Find point of intersection between track and edge of via
+    # This normalize teardrop lengths
+    bdelta = FromMM(0.01)
+    backoff=0
+    while backoff<radius:
+        np = start + wxPoint( vec[0]*backoff, vec[1]*backoff )
+        pt = np-via[0]
+        if sqrt(pt.x * pt.x + pt.y * pt.y)>=radius:
+            break
+        backoff += bdelta
+    start=np
+
     # find point on the track, sharp end of the teardrop
     w = track.GetWidth()/2
-    radius = via[1]/2
+    
     n = __TeardropLength(track, via, hpercent)
     dist = sqrt(n*n + w*w)
     d = atan2(w, n)
@@ -227,7 +235,7 @@ def RebuildAllZones(pcb):
     filler.Fill(pcb.Zones())
 
 
-def SetTeardrops(hpercent=30, vpercent=70, segs=10, pcb=None, use_smd=False,
+def SetTeardrops(hpercent=30, vpercent=100, segs=10, pcb=None, use_smd=False,
                  discard_in_same_zone=True):
     """Set teardrops on a teardrop free board"""
 
