@@ -9,7 +9,7 @@ import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
+from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I, STARTPOINT, ENDPOINT
 
 __version__ = "0.4.10"
 
@@ -122,25 +122,26 @@ def __Bezier(p1, p2, p3, p4, n=20.0):
     return pts
 
 
-def __TeardropLength(track, via, hpercent):
+def __TeardropLength(track, via, hpercent, backoff):
     """Computes the teardrop length"""
-    n = min(track.GetLength(), (via[1] - track.GetWidth()) * 1.2071)
-    n = max(via[1]*(0.5+hpercent/200.0), n)
-    return n
+    return min(via[1]*(hpercent/100.0), track.GetLength() - backoff)
 
 
-def __ComputeCurved(vpercent, w, vec, via, pts, segs):
+def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     """Compute the curves part points"""
 
-    radius = via[1]/2.0
+    minVpercent = float(w*2) / float(via[1])
+    biasVia = (vpercent/100.0  -minVpercent) / (1-minVpercent)
+
+    biasTrack = tlength
 
     vecC = (pts[2] - via[0])
-    tangentC = [ pts[2][0] - vecC[1], pts[2][1] + vecC[0] ]
+    tangentC = [ pts[2][0] - vecC[1]*biasVia, pts[2][1] + vecC[0]*biasVia ]
     vecE = (pts[4] - via[0])
-    tangentE = [ pts[4][0] + vecE[1], pts[4][1] - vecE[0] ]
+    tangentE = [ pts[4][0] + vecE[1]*biasVia, pts[4][1] - vecE[0]*biasVia ]
 
-    tangentB = [pts[1][0] - vec[0]*radius, pts[1][1] - vec[1]*radius]
-    tangentA = [pts[0][0] - vec[0]*radius, pts[0][1] - vec[1]*radius]
+    tangentB = [pts[1][0] - vec[0]*biasTrack, pts[1][1] - vec[1]*biasTrack]
+    tangentA = [pts[0][0] - vec[0]*biasTrack, pts[0][1] - vec[1]*biasTrack]
 
     curve1 = __Bezier(pts[1], tangentB, tangentC, pts[2], n=segs)
     curve2 = __Bezier(pts[4], tangentE, tangentA, pts[0], n=segs)
@@ -152,6 +153,9 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     """Compute all teardrop points"""
     start = track.GetStart()
     end = track.GetEnd()
+
+    if vpercent > 100:
+        vpercent = 100
 
     # ensure that start is at the via/pad end
     d = end - via[0]
@@ -181,13 +185,10 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     # find point on the track, sharp end of the teardrop
     w = track.GetWidth()/2
     
-    n = __TeardropLength(track, via, hpercent)
-    dist = sqrt(n*n + w*w)
-    d = atan2(w, n)
-    vecB = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    pointB = start + wxPoint(int(vecB[0] * dist), int(vecB[1] * dist))
-    vecA = [vec[0]*cos(-d)+vec[1]*sin(-d), -vec[0]*sin(-d)+vec[1]*cos(-d)]
-    pointA = start + wxPoint(int(vecA[0] * dist), int(vecA[1] * dist))
+    n = __TeardropLength(track, via, hpercent, backoff)
+
+    pointB = start + wxPoint( vec[0]*n +vec[1]*w , vec[1]*n -vec[0]*w )
+    pointA = start + wxPoint( vec[0]*n -vec[1]*w , vec[1]*n +vec[0]*w )
 
     # via side points
     radius = via[1] / 2
@@ -206,7 +207,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
 
     pts = [pointA, pointB, pointC, pointD, pointE]
     if segs > 2:
-        pts = __ComputeCurved(vpercent, w, vec, via, pts, segs)
+        pts = __ComputeCurved(vpercent, w, vec, via, pts, segs, n)
 
     return pts
 
@@ -235,7 +236,7 @@ def RebuildAllZones(pcb):
     filler.Fill(pcb.Zones())
 
 
-def SetTeardrops(hpercent=30, vpercent=100, segs=10, pcb=None, use_smd=False,
+def SetTeardrops(hpercent=30, vpercent=95, segs=10, pcb=None, use_smd=False,
                  discard_in_same_zone=True):
     """Set teardrops on a teardrop free board"""
 
@@ -252,8 +253,11 @@ def SetTeardrops(hpercent=30, vpercent=100, segs=10, pcb=None, use_smd=False,
     count = 0
     for track in [t for t in pcb.GetTracks() if type(t)==TRACK]:
         for via in [v for v in vias if track.IsPointOnEnds(v[0], int(v[1]/2))]:
-            if (track.GetLength() < __TeardropLength(track, via, hpercent)) or\
-               (track.GetWidth() >= via[1] * vpercent / 100):
+            if (track.GetWidth() >= via[1] * vpercent / 100):
+                continue
+
+            if track.IsPointOnEnds(via[0], int(via[1]/2)) == STARTPOINT|ENDPOINT:
+                # both start and end are within the via
                 continue
 
             found = False
