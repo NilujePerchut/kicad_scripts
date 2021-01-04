@@ -122,21 +122,27 @@ def __Bezier(p1, p2, p3, p4, n=20.0):
     return pts
 
 
+def __PointDistance(a,b):
+    """Distance between two points"""
+    return sqrt((a[0]-b[0])*(a[0]-b[0]) + (a[1]-b[1])*(a[1]-b[1]))
+
 def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     """Compute the curves part points"""
 
+    radius = via[1]/2
     minVpercent = float(w*2) / float(via[1])
-    biasVia = (tlength/via[1]) * (vpercent/100.0  -minVpercent) / (1-minVpercent)
+    weaken = (vpercent/100.0  -minVpercent) / (1-minVpercent) / radius
 
-    biasTrack = tlength*0.5
+    biasBC = 0.5 * __PointDistance( pts[1], pts[2] )
+    biasAE = 0.5 * __PointDistance( pts[4], pts[0] )
 
-    vecC = (pts[2] - via[0])
-    tangentC = [ pts[2][0] - vecC[1]*biasVia, pts[2][1] + vecC[0]*biasVia ]
-    vecE = (pts[4] - via[0])
-    tangentE = [ pts[4][0] + vecE[1]*biasVia, pts[4][1] - vecE[0]*biasVia ]
+    vecC = pts[2] - via[0]
+    tangentC = [ pts[2][0] - vecC[1]*biasBC*weaken, pts[2][1] + vecC[0]*biasBC*weaken ]
+    vecE = pts[4] - via[0]
+    tangentE = [ pts[4][0] + vecE[1]*biasAE*weaken, pts[4][1] - vecE[0]*biasAE*weaken ]
 
-    tangentB = [pts[1][0] - vec[0]*biasTrack, pts[1][1] - vec[1]*biasTrack]
-    tangentA = [pts[0][0] - vec[0]*biasTrack, pts[0][1] - vec[1]*biasTrack]
+    tangentB = [pts[1][0] - vec[0]*biasBC, pts[1][1] - vec[1]*biasBC]
+    tangentA = [pts[0][0] - vec[0]*biasAE, pts[0][1] - vec[1]*biasAE]
 
     curve1 = __Bezier(pts[1], tangentB, tangentC, pts[2], n=segs)
     curve2 = __Bezier(pts[4], tangentE, tangentA, pts[0], n=segs)
@@ -176,7 +182,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     radius = via[1]/2
 
     # Find point of intersection between track and edge of via
-    # This normalize teardrop lengths
+    # This normalizes teardrop lengths
     bdelta = FromMM(0.01)
     backoff=0
     while backoff<radius:
@@ -187,12 +193,17 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
         backoff += bdelta
     start=np
 
-    # find point on the track, sharp end of the teardrop
     w = track.GetWidth()/2
 
-    # teardrop length
-    n = min(via[1]*(hpercent/100.0), track.GetLength() - backoff)
+    # choose a teardrop length
+    targetLength = via[1]*(hpercent/100.0)
+    n = min(targetLength, track.GetLength() - backoff)
+    # if shortened, shrink width too
+    if n < targetLength:
+        minVpercent = 100* float(w) / float(radius)
+        vpercent = vpercent*n/targetLength + minVpercent*(1-n/targetLength)
 
+    # find point on the track, sharp end of the teardrop
     pointB = start + wxPoint( vec[0]*n +vec[1]*w , vec[1]*n -vec[0]*w )
     pointA = start + wxPoint( vec[0]*n -vec[1]*w , vec[1]*n +vec[0]*w )
 
@@ -201,7 +212,6 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     adjAngle = __AngleDifference(vec, offsetVec)
 
     # via side points
-    radius = via[1] / 2
 
     d = asin(vpercent/100.0) - adjAngle
     vecC = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
@@ -212,10 +222,9 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
 
     # Introduce a last point in order to cover the via centre.
     # If not, the zone won't be filled
-    #vecD = [-vec[0], -vec[1]]
     d = pi-adjAngle
     vecD = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    radius = (via[1]/2)*0.5  # 50% of via radius is enough to include
+    radius = radius*0.5  # 50% of via radius is enough to include
     pointD = via[0] + wxPoint(int(vecD[0] * radius), int(vecD[1] * radius))
 
     pts = [pointA, pointB, pointC, pointD, pointE]
@@ -249,7 +258,7 @@ def RebuildAllZones(pcb):
     filler.Fill(pcb.Zones())
 
 
-def SetTeardrops(hpercent=30, vpercent=95, segs=10, pcb=None, use_smd=False,
+def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
                  discard_in_same_zone=True):
     """Set teardrops on a teardrop free board"""
 
