@@ -126,7 +126,7 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     """Compute the curves part points"""
 
     minVpercent = float(w*2) / float(via[1])
-    biasVia = (vpercent/100.0  -minVpercent) / (1-minVpercent)
+    biasVia = (tlength/via[1]) * (vpercent/100.0  -minVpercent) / (1-minVpercent)
 
     biasTrack = tlength*0.5
 
@@ -196,29 +196,25 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     pointB = start + wxPoint( vec[0]*n +vec[1]*w , vec[1]*n -vec[0]*w )
     pointA = start + wxPoint( vec[0]*n -vec[1]*w , vec[1]*n +vec[0]*w )
 
-
-    dC = asin(vpercent/100.0)
-    dE = asin(-vpercent/100.0)
-
+    # If the track is off centre, slightly adjust the angle
     offsetVec = via[0] - start
     adjAngle = __AngleDifference(vec, offsetVec)
-
-    if adjAngle>0:
-        dE -= adjAngle
-    else:
-        dC -= adjAngle
 
     # via side points
     radius = via[1] / 2
 
-    vecC = [vec[0]*cos(dC)+vec[1]*sin(dC), -vec[0]*sin(dC)+vec[1]*cos(dC)]
-    vecE = [vec[0]*cos(dE)+vec[1]*sin(dE), -vec[0]*sin(dE)+vec[1]*cos(dE)]
+    d = asin(vpercent/100.0) - adjAngle
+    vecC = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
+    d = asin(-vpercent/100.0) - adjAngle
+    vecE = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
     pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
     pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
 
     # Introduce a last point in order to cover the via centre.
     # If not, the zone won't be filled
-    vecD = [-vec[0], -vec[1]]
+    #vecD = [-vec[0], -vec[1]]
+    d = pi-adjAngle
+    vecD = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
     radius = (via[1]/2)*0.5  # 50% of via radius is enough to include
     pointD = via[0] + wxPoint(int(vecD[0] * radius), int(vecD[1] * radius))
 
