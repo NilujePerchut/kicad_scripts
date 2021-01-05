@@ -9,7 +9,8 @@ import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt, pi
 from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I, STARTPOINT, ENDPOINT
+from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
+from pcbnew import STARTPOINT, ENDPOINT
 
 __version__ = "0.4.10"
 
@@ -129,6 +130,10 @@ def __PointDistance(a,b):
 def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     """Compute the curves part points"""
 
+    # A and B are points on the track
+    # C and E are points on the via
+    # D is midpoint behind the via centre
+
     radius = via[1]/2
     minVpercent = float(w*2) / float(via[1])
     weaken = (vpercent/100.0  -minVpercent) / (1-minVpercent) / radius
@@ -137,9 +142,11 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     biasAE = 0.5 * __PointDistance( pts[4], pts[0] )
 
     vecC = pts[2] - via[0]
-    tangentC = [ pts[2][0] - vecC[1]*biasBC*weaken, pts[2][1] + vecC[0]*biasBC*weaken ]
+    tangentC = [ pts[2][0] - vecC[1]*biasBC*weaken,
+                 pts[2][1] + vecC[0]*biasBC*weaken ]
     vecE = pts[4] - via[0]
-    tangentE = [ pts[4][0] + vecE[1]*biasAE*weaken, pts[4][1] - vecE[0]*biasAE*weaken ]
+    tangentE = [ pts[4][0] + vecE[1]*biasAE*weaken,
+                 pts[4][1] - vecE[0]*biasAE*weaken ]
 
     tangentB = [pts[1][0] - vec[0]*biasBC, pts[1][1] - vec[1]*biasBC]
     tangentA = [pts[0][0] - vec[0]*biasAE, pts[0][1] - vec[1]*biasAE]
@@ -150,20 +157,12 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     return curve1 + [pts[3]] + curve2
 
 
-def __AngleDifference(a,b):
-    """Return the signed angle between two vectors"""
-    t = atan2(b[1], b[0]) - atan2(a[1], a[0])
-    if t > pi/2:
-        t -= pi
-    if t < -pi/2:
-        t += pi
-    return t
-
-
 def __FindTouchingTrack(me, endpoint, netTracks):
-    """"""
+    """Find a track connected to the end of another track"""
     match = 0
     for t in netTracks:
+        # The track object can change, this seems like the only
+        # reliable way to test if tracks are the same
         if t.GetStart() == me.GetStart() and t.GetEnd() == me.GetEnd():
             continue
         match = t.IsPointOnEnds(endpoint, 10)
@@ -171,26 +170,29 @@ def __FindTouchingTrack(me, endpoint, netTracks):
             return match, t
     return False, False
 
+
+def __NormalizeVector(pt):
+    """Make vector unit length"""
+    norm = sqrt(pt.x * pt.x + pt.y * pt.y)
+    return [t / norm for t in pt]
+
 def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
     """Compute all teardrop points"""
     start = track.GetStart()
     end = track.GetEnd()
+    radius = via[1]/2.0
+    w = track.GetWidth()/2
 
     if vpercent > 100:
         vpercent = 100
 
     # ensure that start is at the via/pad end
-    d = end - via[0]
-    if sqrt(d.x * d.x + d.y * d.y) < via[1]/2.0:
+    if __PointDistance(end, via[0]) < radius:
         start, end = end, start
 
     # get normalized track vector
     # it will be used a base vector pointing in the track direction
-    pt = end - start
-    norm = sqrt(pt.x * pt.x + pt.y * pt.y)
-    vec = [t / norm for t in pt]
-
-    radius = via[1]/2
+    vec = __NormalizeVector(end - start)
 
     # Find point of intersection between track and edge of via
     # This normalizes teardrop lengths
@@ -198,27 +200,19 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
     backoff=0
     while backoff<radius:
         np = start + wxPoint( vec[0]*backoff, vec[1]*backoff )
-        pt = np-via[0]
-        if sqrt(pt.x * pt.x + pt.y * pt.y)>=radius:
+        if __PointDistance(np, via[0]) >= radius:
             break
         backoff += bdelta
     start=np
 
-    pt = start - via[0]
-    norm = sqrt(pt.x * pt.x + pt.y * pt.y)
-    vecFat = [t / norm for t in pt]
-
-
-    w = track.GetWidth()/2
+    # vec now points from via to intersect point
+    vec = __NormalizeVector(start - via[0])
 
     # choose a teardrop length
     targetLength = via[1]*(hpercent/100.0)
     n = min(targetLength, track.GetLength() - backoff)
 
-
-    # if not long enough, attempt to walk back along the curved trace
-
-
+    # if not long enough, attempt to walk back along the curved track
     net = track.GetNetname()
     layer = track.GetLayer()
 
@@ -229,13 +223,11 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
 
     consumed = 0
     while n+consumed < targetLength:
-
-        # find track connected to this track's end
         match, t = __FindTouchingTrack(track, end, netTracks)
         if (match == False):
             break
 
-        # [if angle is outside tolerance: break]
+        # [if angle is outside tolerance: break ?]
 
         consumed += n
         n = min(targetLength-consumed, t.GetLength())
@@ -245,14 +237,8 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
         if match != STARTPOINT:
             start, end = end, start
 
-
-    pt = end - start
-    norm = sqrt(pt.x * pt.x + pt.y * pt.y)
-    vecThin = [t / norm for t in pt]
-
-
-
-
+    # Track may now not point directly at via
+    vecT = __NormalizeVector(end - start)
 
     # if shortened, shrink width too
     if n+consumed < targetLength:
@@ -260,32 +246,24 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
         vpercent = vpercent*n/targetLength + minVpercent*(1-n/targetLength)
 
     # find point on the track, sharp end of the teardrop
-    pointB = start + wxPoint( vecThin[0]*n +vecThin[1]*w , vecThin[1]*n -vecThin[0]*w )
-    pointA = start + wxPoint( vecThin[0]*n -vecThin[1]*w , vecThin[1]*n +vecThin[0]*w )
-
-    # If the track is off centre, slightly adjust the angle
-    offsetVec = via[0] - np
-    adjAngle = __AngleDifference(vec, offsetVec)
+    pointB = start + wxPoint( vecT[0]*n +vecT[1]*w , vecT[1]*n -vecT[0]*w )
+    pointA = start + wxPoint( vecT[0]*n -vecT[1]*w , vecT[1]*n +vecT[0]*w )
 
     # via side points
-
-    d = asin(vpercent/100.0) - adjAngle
+    d = asin(vpercent/100.0)
     vecC = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    d = asin(-vpercent/100.0) - adjAngle
+    d = asin(-vpercent/100.0)
     vecE = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
     pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
     pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
 
     # Introduce a last point in order to cover the via centre.
     # If not, the zone won't be filled
-    d = pi-adjAngle
-    vecD = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    radius = radius*0.5  # 50% of via radius is enough to include
-    pointD = via[0] + wxPoint(int(vecD[0] * radius), int(vecD[1] * radius))
+    pointD = via[0] + wxPoint(int(vec[0]*-0.5*radius), int(vec[1]*-0.5*radius))
 
     pts = [pointA, pointB, pointC, pointD, pointE]
     if segs > 2:
-        pts = __ComputeCurved(vpercent, w, vecThin, via, pts, segs, n)
+        pts = __ComputeCurved(vpercent, w, vecT, via, pts, segs, n)
 
     return pts
 
@@ -334,7 +312,7 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
             if (track.GetWidth() >= via[1] * vpercent / 100):
                 continue
 
-            if track.IsPointOnEnds(via[0], int(via[1]/2)) == STARTPOINT|ENDPOINT:
+            if track.IsPointOnEnds(via[0], int(via[1]/2))==STARTPOINT|ENDPOINT:
                 # both start and end are within the via
                 continue
 
@@ -351,13 +329,13 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
                 continue
 
             # Discard case where pad/via is within a zone with the same netname
-            # WARNING: this can severly reduce performances
+            # WARNING: this can severely reduce performance
             if discard_in_same_zone and \
                __IsViaAndTrackInSameNetZone(pcb, via, track):
                 continue
 
             if not found:
-                coor = __ComputePoints(track, via, hpercent, vpercent, segs, pcb)
+                coor = __ComputePoints(track,via,hpercent,vpercent,segs,pcb)
                 pcb.Add(__Zone(pcb, coor, track))
                 count += 1
 
