@@ -12,7 +12,7 @@ from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
 from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
 from pcbnew import STARTPOINT, ENDPOINT
 
-__version__ = "0.4.10"
+__version__ = "0.4.11"
 
 ToUnits = ToMM
 FromUnits = FromMM
