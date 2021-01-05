@@ -164,7 +164,7 @@ def __FindTouchingTrack(me, endpoint, netTracks):
     """"""
     match = 0
     for t in netTracks:
-        if t == me:
+        if t.GetStart() == me.GetStart() and t.GetEnd() == me.GetEnd():
             continue
         match = t.IsPointOnEnds(endpoint, 10)
         if match:
@@ -204,6 +204,11 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
         backoff += bdelta
     start=np
 
+    pt = start - via[0]
+    norm = sqrt(pt.x * pt.x + pt.y * pt.y)
+    vecFat = [t / norm for t in pt]
+
+
     w = track.GetWidth()/2
 
     # choose a teardrop length
@@ -227,7 +232,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
 
         # find track connected to this track's end
         match, t = __FindTouchingTrack(track, end, netTracks)
-        if (t == False):
+        if (match == False):
             break
 
         # [if angle is outside tolerance: break]
@@ -237,13 +242,13 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
         track = t
         end = t.GetEnd()
         start = t.GetStart()
-        if match == ENDPOINT:
+        if match != STARTPOINT:
             start, end = end, start
 
 
     pt = end - start
     norm = sqrt(pt.x * pt.x + pt.y * pt.y)
-    vec = [t / norm for t in pt]
+    vecThin = [t / norm for t in pt]
 
 
 
@@ -255,11 +260,11 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
         vpercent = vpercent*n/targetLength + minVpercent*(1-n/targetLength)
 
     # find point on the track, sharp end of the teardrop
-    pointB = start + wxPoint( vec[0]*n +vec[1]*w , vec[1]*n -vec[0]*w )
-    pointA = start + wxPoint( vec[0]*n -vec[1]*w , vec[1]*n +vec[0]*w )
+    pointB = start + wxPoint( vecThin[0]*n +vecThin[1]*w , vecThin[1]*n -vecThin[0]*w )
+    pointA = start + wxPoint( vecThin[0]*n -vecThin[1]*w , vecThin[1]*n +vecThin[0]*w )
 
     # If the track is off centre, slightly adjust the angle
-    offsetVec = via[0] - start
+    offsetVec = via[0] - np
     adjAngle = __AngleDifference(vec, offsetVec)
 
     # via side points
@@ -280,7 +285,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
 
     pts = [pointA, pointB, pointC, pointD, pointE]
     if segs > 2:
-        pts = __ComputeCurved(vpercent, w, vec, via, pts, segs, n)
+        pts = __ComputeCurved(vpercent, w, vecThin, via, pts, segs, n)
 
     return pts
 
