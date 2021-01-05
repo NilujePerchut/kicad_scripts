@@ -157,17 +157,17 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
     return curve1 + [pts[3]] + curve2
 
 
-def __FindTouchingTrack(me, endpoint, netTracks):
+def __FindTouchingTrack(t1, endpoint, trackLookup):
     """Find a track connected to the end of another track"""
     match = 0
-    for t in netTracks:
+    for t2 in trackLookup[t1.GetLayer()][t1.GetNetname()]:
         # The track object can change, this seems like the only
         # reliable way to test if tracks are the same
-        if t.GetStart() == me.GetStart() and t.GetEnd() == me.GetEnd():
+        if t2.GetStart() == t1.GetStart() and t2.GetEnd() == t1.GetEnd():
             continue
-        match = t.IsPointOnEnds(endpoint, 10)
+        match = t2.IsPointOnEnds(endpoint, 10)
         if match:
-            return match, t
+            return match, t2
     return False, False
 
 
@@ -176,7 +176,8 @@ def __NormalizeVector(pt):
     norm = sqrt(pt.x * pt.x + pt.y * pt.y)
     return [t / norm for t in pt]
 
-def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
+def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
+                    trackLookup):
     """Compute all teardrop points"""
     start = track.GetStart()
     end = track.GetEnd()
@@ -211,34 +212,29 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
     # choose a teardrop length
     targetLength = via[1]*(hpercent/100.0)
     n = min(targetLength, track.GetLength() - backoff)
-
-    # if not long enough, attempt to walk back along the curved track
-    net = track.GetNetname()
-    layer = track.GetLayer()
-
-    netTracks = []
-    for t in pcb.GetTracks():
-        if type(t)==TRACK and t.GetLayer()==layer and t.GetNetname()==net:
-            netTracks.append(t)
-
     consumed = 0
-    while n+consumed < targetLength:
-        match, t = __FindTouchingTrack(track, end, netTracks)
-        if (match == False):
-            break
 
-        # [if angle is outside tolerance: break ?]
-
-        consumed += n
-        n = min(targetLength-consumed, t.GetLength())
-        track = t
-        end = t.GetEnd()
-        start = t.GetStart()
-        if match != STARTPOINT:
-            start, end = end, start
-
-    # Track may now not point directly at via
-    vecT = __NormalizeVector(end - start)
+    if follow_tracks:
+        # if not long enough, attempt to walk back along the curved track
+        while n+consumed < targetLength:
+            match, t = __FindTouchingTrack(track, end, trackLookup)
+            if (match == False):
+                break
+    
+            # [if angle is outside tolerance: break ?]
+    
+            consumed += n
+            n = min(targetLength-consumed, t.GetLength())
+            track = t
+            end = t.GetEnd()
+            start = t.GetStart()
+            if match != STARTPOINT:
+                start, end = end, start
+    
+        # Track may now not point directly at via
+        vecT = __NormalizeVector(end - start)
+    else:
+        vecT = vec
 
     # if shortened, shrink width too
     if n+consumed < targetLength:
@@ -293,7 +289,7 @@ def RebuildAllZones(pcb):
 
 
 def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
-                 discard_in_same_zone=True):
+                 discard_in_same_zone=True, follow_tracks=True):
     """Set teardrops on a teardrop free board"""
 
     if pcb is None:
@@ -304,6 +300,19 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
     vias_selected = __GetAllVias(pcb)[1] + __GetAllPads(pcb, pad_types)[1]
     if len(vias_selected) > 0:
         vias = vias_selected
+
+    trackLookup = {}
+    if follow_tracks:
+        for t in pcb.GetTracks():
+            net = t.GetNetname()
+            layer = t.GetLayer()
+
+            if layer not in trackLookup:
+                trackLookup[layer] = {}
+            if net not in trackLookup[layer]:
+                trackLookup[layer][net]=[]
+            trackLookup[layer][net].append(t)
+
 
     teardrops = __GetAllTeardrops(pcb)
     count = 0
@@ -335,7 +344,8 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
                 continue
 
             if not found:
-                coor = __ComputePoints(track,via,hpercent,vpercent,segs,pcb)
+                coor = __ComputePoints(track, via, hpercent, vpercent, segs,
+                                       follow_tracks, trackLookup)
                 pcb.Add(__Zone(pcb, coor, track))
                 count += 1
 
