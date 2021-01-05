@@ -160,6 +160,8 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
 def __FindTouchingTrack(t1, endpoint, trackLookup):
     """Find a track connected to the end of another track"""
     match = 0
+    matches = 0
+    ret = False, False
     for t2 in trackLookup[t1.GetLayer()][t1.GetNetname()]:
         # The track object can change, this seems like the only
         # reliable way to test if tracks are the same
@@ -167,8 +169,12 @@ def __FindTouchingTrack(t1, endpoint, trackLookup):
             continue
         match = t2.IsPointOnEnds(endpoint, 10)
         if match:
-            return match, t2
-    return False, False
+            # if faced with a Y junction, stop here
+            matches += 1
+            if matches>1:
+                return False, False
+            ret = match, t2
+    return ret
 
 
 def __NormalizeVector(pt):
