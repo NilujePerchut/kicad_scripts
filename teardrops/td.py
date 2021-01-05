@@ -160,7 +160,18 @@ def __AngleDifference(a,b):
     return t
 
 
-def __ComputePoints(track, via, hpercent, vpercent, segs):
+def __FindTouchingTrack(me, endpoint, netTracks):
+    """"""
+    match = 0
+    for t in netTracks:
+        if t == me:
+            continue
+        match = t.IsPointOnEnds(endpoint, 10)
+        if match:
+            return match, t
+    return False, False
+
+def __ComputePoints(track, via, hpercent, vpercent, segs, pcb):
     """Compute all teardrop points"""
     start = track.GetStart()
     end = track.GetEnd()
@@ -198,8 +209,48 @@ def __ComputePoints(track, via, hpercent, vpercent, segs):
     # choose a teardrop length
     targetLength = via[1]*(hpercent/100.0)
     n = min(targetLength, track.GetLength() - backoff)
+
+
+    # if not long enough, attempt to walk back along the curved trace
+
+
+    net = track.GetNetname()
+    layer = track.GetLayer()
+
+    netTracks = []
+    for t in pcb.GetTracks():
+        if type(t)==TRACK and t.GetLayer()==layer and t.GetNetname()==net:
+            netTracks.append(t)
+
+    consumed = 0
+    while n+consumed < targetLength:
+
+        # find track connected to this track's end
+        match, t = __FindTouchingTrack(track, end, netTracks)
+        if (t == False):
+            break
+
+        # [if angle is outside tolerance: break]
+
+        consumed += n
+        n = min(targetLength-consumed, t.GetLength())
+        track = t
+        end = t.GetEnd()
+        start = t.GetStart()
+        if match == ENDPOINT:
+            start, end = end, start
+
+
+    pt = end - start
+    norm = sqrt(pt.x * pt.x + pt.y * pt.y)
+    vec = [t / norm for t in pt]
+
+
+
+
+
     # if shortened, shrink width too
-    if n < targetLength:
+    if n+consumed < targetLength:
         minVpercent = 100* float(w) / float(radius)
         vpercent = vpercent*n/targetLength + minVpercent*(1-n/targetLength)
 
@@ -301,7 +352,7 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
                 continue
 
             if not found:
-                coor = __ComputePoints(track, via, hpercent, vpercent, segs)
+                coor = __ComputePoints(track, via, hpercent, vpercent, segs, pcb)
                 pcb.Add(__Zone(pcb, coor, track))
                 count += 1
 
