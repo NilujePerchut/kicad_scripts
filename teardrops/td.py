@@ -128,7 +128,7 @@ def __PointDistance(a,b):
     """Distance between two points"""
     return sqrt((a[0]-b[0])*(a[0]-b[0]) + (a[1]-b[1])*(a[1]-b[1]))
 
-def __ComputeCurved(vpercent, w, vec, via, pts, segs, tlength):
+def __ComputeCurved(vpercent, w, vec, via, pts, segs):
     """Compute the curves part points"""
 
     # A and B are points on the track
@@ -266,7 +266,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
 
     pts = [pointA, pointB, pointC, pointD, pointE]
     if segs > 2:
-        pts = __ComputeCurved(vpercent, w, vecT, via, pts, segs, n)
+        pts = __ComputeCurved(vpercent, w, vecT, via, pts, segs)
 
     return pts
 
@@ -311,14 +311,15 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
     trackLookup = {}
     if follow_tracks:
         for t in pcb.GetTracks():
-            net = t.GetNetname()
-            layer = t.GetLayer()
-
-            if layer not in trackLookup:
-                trackLookup[layer] = {}
-            if net not in trackLookup[layer]:
-                trackLookup[layer][net]=[]
-            trackLookup[layer][net].append(t)
+            if type(t) == TRACK:
+                net = t.GetNetname()
+                layer = t.GetLayer()
+    
+                if layer not in trackLookup:
+                    trackLookup[layer] = {}
+                if net not in trackLookup[layer]:
+                    trackLookup[layer][net]=[]
+                trackLookup[layer][net].append(t)
 
 
     teardrops = __GetAllTeardrops(pcb)
