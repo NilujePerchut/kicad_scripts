@@ -5,6 +5,7 @@
 # (c) Niluje 2019 thewireddoesntexist.org
 #
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
+# Cubic Bezier upgrade by mitxela, 2021 mitxela.com
 
 import wx
 import os
