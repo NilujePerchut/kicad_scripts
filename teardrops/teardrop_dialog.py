@@ -5,10 +5,12 @@
 # (c) Niluje 2019 thewireddoesntexist.org
 #
 # Based on Teardrops for PCBNEW by svofski, 2014 http://sensi.org/~svo
+# Cubic Bezier upgrade by mitxela, 2021 mitxela.com
 
 import wx
 import pcbnew
 import os
+import time
 
 from .teardrop_gui import teardrop_gui
 from .td import SetTeardrops, RmTeardrops, __version__
@@ -32,7 +34,8 @@ class TeardropDialog(teardrop_gui):
         """Enables or disables the parameters/options elements"""
         els = [self.st_hpercent, self.sp_hpercent, self.st_vpercent,
                self.sp_vpercent, self.st_nbseg, self.sp_nbseg,
-               self.cb_include_smd_pads, self.cb_discard_in_same_zone]
+               self.cb_include_smd_pads, self.cb_discard_in_same_zone,
+               self.cb_follow_tracks]
         for i, el in enumerate(els):
             if self.rbx_action.GetSelection() == 0:
                 el.Enable()
@@ -42,13 +45,15 @@ class TeardropDialog(teardrop_gui):
     def onProcessAction(self, event):
         """Executes the requested action"""
         if self.rbx_action.GetSelection() == 0:
+            start = time.time()
             count = SetTeardrops(self.sp_hpercent.GetValue(),
                                  self.sp_vpercent.GetValue(),
                                  self.sp_nbseg.GetValue(),
                                  self.board,
                                  self.cb_include_smd_pads.IsChecked(),
-                                 self.cb_discard_in_same_zone.IsChecked())
-            wx.MessageBox("{0} Teardrops inserted".format(count))
+                                 self.cb_discard_in_same_zone.IsChecked(),
+                                 self.cb_follow_tracks.IsChecked())
+            wx.MessageBox("{} Teardrops inserted, took {:.3f} seconds".format(count, time.time()-start))
         else:
             count = RmTeardrops(pcb=self.board)
             wx.MessageBox("{0} Teardrops removed".format(count))
