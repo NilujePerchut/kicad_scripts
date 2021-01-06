@@ -200,14 +200,14 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
 
     # get normalized track vector
     # it will be used a base vector pointing in the track direction
-    vec = __NormalizeVector(end - start)
+    vecT = __NormalizeVector(end - start)
 
     # Find point of intersection between track and edge of via
     # This normalizes teardrop lengths
     bdelta = FromMM(0.01)
     backoff=0
     while backoff<radius:
-        np = start + wxPoint( vec[0]*backoff, vec[1]*backoff )
+        np = start + wxPoint( vecT[0]*backoff, vecT[1]*backoff )
         if __PointDistance(np, via[0]) >= radius:
             break
         backoff += bdelta
@@ -240,8 +240,6 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     
         # Track may now not point directly at via
         vecT = __NormalizeVector(end - start)
-    else:
-        vecT = vec
 
     # if shortened, shrink width too
     if n+consumed < targetLength:
