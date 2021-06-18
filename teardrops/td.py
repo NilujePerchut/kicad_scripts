@@ -250,6 +250,12 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     pointB = start + wxPoint( vecT[0]*n +vecT[1]*w , vecT[1]*n -vecT[0]*w )
     pointA = start + wxPoint( vecT[0]*n -vecT[1]*w , vecT[1]*n +vecT[0]*w )
 
+    # In some cases of very short, eccentric tracks the points can end up
+    # inside the teardrop. If this happens just cancel adding it
+    if ( __PointDistance(pointA, via[0]) < radius or
+         __PointDistance(pointB, via[0]) < radius ):
+        return False
+
     # via side points
 
     # angular positions of where the teardrop meets the via
@@ -370,8 +376,9 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
             if not found:
                 coor = __ComputePoints(track, via, hpercent, vpercent, segs,
                                        follow_tracks, trackLookup, noBulge)
-                pcb.Add(__Zone(pcb, coor, track))
-                count += 1
+                if coor:
+                    pcb.Add(__Zone(pcb, coor, track))
+                    count += 1
 
     RebuildAllZones(pcb)
     print('{0} teardrops inserted'.format(count))
