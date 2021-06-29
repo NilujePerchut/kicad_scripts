@@ -35,7 +35,7 @@ class TeardropDialog(teardrop_gui):
         els = [self.st_hpercent, self.sp_hpercent, self.st_vpercent,
                self.sp_vpercent, self.st_nbseg, self.sp_nbseg,
                self.cb_include_smd_pads, self.cb_discard_in_same_zone,
-               self.cb_follow_tracks]
+               self.cb_follow_tracks, self.cb_no_bulge]
         for i, el in enumerate(els):
             if self.rbx_action.GetSelection() == 0:
                 el.Enable()
@@ -52,7 +52,8 @@ class TeardropDialog(teardrop_gui):
                                  self.board,
                                  self.cb_include_smd_pads.IsChecked(),
                                  self.cb_discard_in_same_zone.IsChecked(),
-                                 self.cb_follow_tracks.IsChecked())
+                                 self.cb_follow_tracks.IsChecked(),
+                                 self.cb_no_bulge.IsChecked())
             wx.MessageBox("{} Teardrops inserted, took {:.3f} seconds".format(count, time.time()-start))
         else:
             count = RmTeardrops(pcb=self.board)

@@ -184,7 +184,7 @@ def __NormalizeVector(pt):
     return [t / norm for t in pt]
 
 def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
-                    trackLookup):
+                    trackLookup, noBulge):
     """Compute all teardrop points"""
     start = track.GetStart()
     end = track.GetEnd()
@@ -250,11 +250,35 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     pointB = start + wxPoint( vecT[0]*n +vecT[1]*w , vecT[1]*n -vecT[0]*w )
     pointA = start + wxPoint( vecT[0]*n -vecT[1]*w , vecT[1]*n +vecT[0]*w )
 
+    # In some cases of very short, eccentric tracks the points can end up
+    # inside the teardrop. If this happens just cancel adding it
+    if ( __PointDistance(pointA, via[0]) < radius or
+         __PointDistance(pointB, via[0]) < radius ):
+        return False
+
     # via side points
-    d = asin(vpercent/100.0)
-    vecC = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
-    d = asin(-vpercent/100.0)
-    vecE = [vec[0]*cos(d)+vec[1]*sin(d), -vec[0]*sin(d)+vec[1]*cos(d)]
+
+    # angular positions of where the teardrop meets the via
+    dC = asin(vpercent/100.0)
+    dE = -dC
+
+    if noBulge:
+        # find (signed) angle between track and teardrop
+        offAngle = atan2(vecT[1],vecT[0]) - atan2(vec[1],vec[0])
+        if offAngle > pi:
+            offAngle -=2*pi
+        if offAngle < -pi:
+            offAngle +=2*pi
+
+        if offAngle+dC > pi/2:
+            dC = pi/2 - offAngle
+
+        if offAngle+dE < -pi/2:
+            dE = -pi/2 - offAngle
+
+    vecC = [vec[0]*cos(dC)+vec[1]*sin(dC), -vec[0]*sin(dC)+vec[1]*cos(dC)]
+    vecE = [vec[0]*cos(dE)+vec[1]*sin(dE), -vec[0]*sin(dE)+vec[1]*cos(dE)]
+
     pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
     pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
 
@@ -294,7 +318,7 @@ def RebuildAllZones(pcb):
 
 
 def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
-                 discard_in_same_zone=True, follow_tracks=True):
+                 discard_in_same_zone=True, follow_tracks=True, noBulge=True):
     """Set teardrops on a teardrop free board"""
 
     if pcb is None:
@@ -351,9 +375,10 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
 
             if not found:
                 coor = __ComputePoints(track, via, hpercent, vpercent, segs,
-                                       follow_tracks, trackLookup)
-                pcb.Add(__Zone(pcb, coor, track))
-                count += 1
+                                       follow_tracks, trackLookup, noBulge)
+                if coor:
+                    pcb.Add(__Zone(pcb, coor, track))
+                    count += 1
 
     RebuildAllZones(pcb)
     print('{0} teardrops inserted'.format(count))
