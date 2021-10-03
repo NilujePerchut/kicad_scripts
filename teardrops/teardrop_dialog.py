@@ -69,4 +69,4 @@ def InitTeardropDialog(board):
     """Launch the dialog"""
     tg = TeardropDialog(board)
     tg.ShowModal()
-    return tg
+    tg.Destroy()
