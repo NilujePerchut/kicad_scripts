@@ -104,7 +104,6 @@ def __Zone(board, points, track):
     for p in points:
         ol.Append(p.x, p.y)
 
-    sys.stdout.write("+")
     return z
 
 
