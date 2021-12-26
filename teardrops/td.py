@@ -9,8 +9,8 @@
 import os
 import sys
 from math import cos, acos, sin, asin, tan, atan2, sqrt, pi
-from pcbnew import VIA, ToMM, TRACK, FromMM, wxPoint, GetBoard, ZONE_CONTAINER
-from pcbnew import PAD_ATTRIB_STANDARD, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
+from pcbnew import PCB_VIA, ToMM, PCB_TRACK, FromMM, wxPoint, GetBoard, ZONE
+from pcbnew import PAD_ATTRIB_PTH, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
 from pcbnew import STARTPOINT, ENDPOINT
 
 __version__ = "0.4.11"
@@ -26,7 +26,7 @@ def __GetAllVias(board):
     vias = []
     vias_selected = []
     for item in board.GetTracks():
-        if type(item) == VIA:
+        if type(item) == PCB_VIA:
             pos = item.GetPosition()
             width = item.GetWidth()
             drill = item.GetDrillValue()
@@ -41,8 +41,7 @@ def __GetAllPads(board, filters=[]):
     """Just retreive all pads from the given board"""
     pads = []
     pads_selected = []
-    for i in range(board.GetPadCount()):
-        pad = board.GetPad(i)
+    for pad in board.GetPads():
         if pad.GetAttribute() in filters:
             pos = pad.GetPosition()
             drill = min(pad.GetSize())
@@ -78,7 +77,7 @@ def __GetAllTeardrops(board):
 def __DoesTeardropBelongTo(teardrop, track, via):
     """Return True if the teardrop covers given track AND via"""
     # First test if the via belongs to the teardrop
-    if not teardrop.HitTestInsideZone(via[0]):
+    if not teardrop.HitTestFilledArea(track.GetLayer(), via[0]):
         return False
     # In a second time, test if the track belongs to the teardrop
     if not track.HitTest(teardrop.GetBoundingBox().GetCenter()):
@@ -88,12 +87,12 @@ def __DoesTeardropBelongTo(teardrop, track, via):
 
 def __Zone(board, points, track):
     """Add a zone to the board"""
-    z = ZONE_CONTAINER(board)
+    z = ZONE(board)
 
     # Add zone properties
     z.SetLayer(track.GetLayer())
     z.SetNetCode(track.GetNetCode())
-    z.SetZoneClearance(track.GetClearance())
+    z.SetLocalClearance(track.GetLocalClearance(""))
     z.SetMinThickness(25400)  # The minimum
     z.SetPadConnection(2)  # 2 -> solid
     z.SetIsFilled(True)
@@ -323,7 +322,7 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
     if pcb is None:
         pcb = GetBoard()
 
-    pad_types = [PAD_ATTRIB_STANDARD] + [PAD_ATTRIB_SMD]*use_smd
+    pad_types = [PAD_ATTRIB_PTH] + [PAD_ATTRIB_SMD]*use_smd
     vias = __GetAllVias(pcb)[0] + __GetAllPads(pcb, pad_types)[0]
     vias_selected = __GetAllVias(pcb)[1] + __GetAllPads(pcb, pad_types)[1]
     if len(vias_selected) > 0:
@@ -332,7 +331,7 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
     trackLookup = {}
     if follow_tracks:
         for t in pcb.GetTracks():
-            if type(t) == TRACK:
+            if type(t) == PCB_TRACK:
                 net = t.GetNetname()
                 layer = t.GetLayer()
     
@@ -345,7 +344,7 @@ def SetTeardrops(hpercent=50, vpercent=90, segs=10, pcb=None, use_smd=False,
 
     teardrops = __GetAllTeardrops(pcb)
     count = 0
-    for track in [t for t in pcb.GetTracks() if type(t)==TRACK]:
+    for track in [t for t in pcb.GetTracks() if type(t)==PCB_TRACK]:
         for via in [v for v in vias if track.IsPointOnEnds(v[0], int(v[1]/2))]:
             if (track.GetWidth() >= via[1] * vpercent / 100):
                 continue

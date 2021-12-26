@@ -17,7 +17,7 @@ import wx.xrc
 class teardrop_gui ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Teardrops", pos = wx.DefaultPosition, size = wx.Size( 450,368 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Teardrops", pos = wx.DefaultPosition, size = wx.Size( 470,420 ), style = wx.CAPTION|wx.CLOSE_BOX|wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER )
 
 		#self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 		import sys
@@ -42,7 +42,7 @@ class teardrop_gui ( wx.Dialog ):
 
 		gs_params.Add( self.st_hpercent, 0, wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.FIXED_MINSIZE, 5 )
 
-		self.sp_hpercent = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 0, 100, 50 )
+		self.sp_hpercent = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 100,20 ), wx.SP_ARROW_KEYS, 0, 100, 50 )
 		gs_params.Add( self.sp_hpercent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.FIXED_MINSIZE|wx.SHAPED, 5 )
 
 		self.st_vpercent = wx.StaticText( self, wx.ID_ANY, u"Vertical percent", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -50,7 +50,7 @@ class teardrop_gui ( wx.Dialog ):
 
 		gs_params.Add( self.st_vpercent, 0, wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.FIXED_MINSIZE, 5 )
 
-		self.sp_vpercent = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 0, 100, 90 )
+		self.sp_vpercent = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 100,20 ), wx.SP_ARROW_KEYS, 0, 100, 90 )
 		gs_params.Add( self.sp_vpercent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.FIXED_MINSIZE|wx.SHAPED, 5 )
 
 		self.st_nbseg = wx.StaticText( self, wx.ID_ANY, u"Number of segments", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -58,7 +58,7 @@ class teardrop_gui ( wx.Dialog ):
 
 		gs_params.Add( self.st_nbseg, 0, wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.FIXED_MINSIZE, 5 )
 
-		self.sp_nbseg = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.SP_ARROW_KEYS, 2, 100, 10 )
+		self.sp_nbseg = wx.SpinCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 100,20 ), wx.SP_ARROW_KEYS, 2, 100, 10 )
 		gs_params.Add( self.sp_nbseg, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT|wx.EXPAND|wx.FIXED_MINSIZE|wx.SHAPED, 5 )
 
 
