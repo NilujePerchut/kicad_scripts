@@ -9,7 +9,7 @@
 from math import cos, sin, asin, atan2, sqrt, pi
 from pcbnew import PCB_VIA, ToMM, PCB_TRACK, FromMM, wxPoint, GetBoard, ZONE
 from pcbnew import PAD_ATTRIB_PTH, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
-from pcbnew import STARTPOINT, ENDPOINT, ZONE_SETTINGS, ZONE_CONNECTION_FULL
+from pcbnew import STARTPOINT, ENDPOINT, ZONE_SETTINGS, ZONE_CONNECTION_FULL, ZONE_FILL_MODE_POLYGONS
 
 __version__ = "0.5.0"
 
@@ -94,6 +94,7 @@ def __Zone(board, points, track):
     z.SetMinThickness(25400)  # The minimum
     z.SetPadConnection(ZONE_CONNECTION_FULL)
     z.SetCornerSmoothingType(ZONE_SETTINGS.SMOOTHING_NONE)
+    z.SetFillMode(ZONE_FILL_MODE_POLYGONS)
     z.SetIsFilled(True)
     z.SetPriority(MAGIC_TEARDROP_ZONE_ID)
     ol = z.Outline()
