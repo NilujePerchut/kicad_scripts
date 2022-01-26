@@ -45,7 +45,7 @@
             <property name="minimum_size"></property>
             <property name="name">teardrop_gui</property>
             <property name="pos"></property>
-            <property name="size">450,368</property>
+            <property name="size">450,415</property>
             <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER</property>
             <property name="subclass">; ; forward_declare</property>
             <property name="title">Teardrops</property>
