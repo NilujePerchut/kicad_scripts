@@ -7,7 +7,7 @@
 # Cubic Bezier upgrade by mitxela, 2021 mitxela.com
 
 from math import cos, sin, asin, atan2, sqrt, pi
-from pcbnew import PCB_VIA, ToMM, PCB_TRACK, FromMM, wxPoint, GetBoard, ZONE
+from pcbnew import PCB_VIA, ToMM, PCB_TRACK, PCB_ARC, FromMM, wxPoint, GetBoard, ZONE
 from pcbnew import PAD_ATTRIB_PTH, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
 from pcbnew import STARTPOINT, ENDPOINT
 
@@ -181,6 +181,41 @@ def __NormalizeVector(pt):
     return [t / norm for t in pt]
 
 
+def __FindPositionAndVectorAlongArc(track, pos, trackReversed):
+    """ return the x,y position and direction vector at a point on an arc """
+    radius     = track.GetRadius()
+    length     = track.GetLength()
+    arcCenter  = track.GetPosition() # or maybe track.GetCenter()
+
+    # startAngle, endAngle are the absolute start and end.
+    # angle is the included angle of the arc, negative if anticlockwise
+    if trackReversed:
+        angle      = -track.GetAngle()
+        startAngle = track.GetArcAngleEnd()
+    else:
+        angle      = track.GetAngle()
+        startAngle = track.GetArcAngleStart()
+
+    posAngle = startAngle + angle * pos/length
+
+    # angle is returned in units of TenthsOfADegree
+    posAngle *= pi/1800
+    pcos = cos(posAngle)
+    psin = sin(posAngle)
+
+    newX = arcCenter.x + pcos * radius
+    newY = arcCenter.y + psin * radius
+
+    # the vector points from start towards end
+    # posAngle points from centre to pos, so rotate by 90 degrees
+    if angle > 0:
+        vec = [ -psin, pcos ]
+    else:
+        vec = [ psin, -pcos ]
+
+    return (wxPoint(newX, newY), vec)
+
+
 def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
                     trackLookup, noBulge):
     """Compute all teardrop points"""
@@ -188,6 +223,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     end = track.GetEnd()
     radius = via[1]/2.0
     w = track.GetWidth()/2
+    trackReversed = False
 
     if vpercent > 100:
         vpercent = 100
@@ -195,10 +231,14 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     # ensure that start is at the via/pad end
     if __PointDistance(end, via[0]) < radius:
         start, end = end, start
+        trackReversed = True
 
     # get normalized track vector
     # it will be used a base vector pointing in the track direction
-    vecT = __NormalizeVector(end - start)
+    if type(track) == PCB_ARC:
+        arcP, vecT = __FindPositionAndVectorAlongArc(track, radius/2, trackReversed)
+    else:
+        vecT = __NormalizeVector(end - start)
 
     # Find point of intersection between track and edge of via
     # This normalizes teardrop lengths
@@ -226,8 +266,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
             if (match is False):
                 break
 
-            # [if angle is outside tolerance: break ?]
-
+            backoff = 0
             consumed += n
             n = min(targetLength-consumed, t.GetLength())
             track = t
@@ -235,6 +274,9 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
             start = t.GetStart()
             if match != STARTPOINT:
                 start, end = end, start
+                trackReversed = True
+            else:
+                trackReversed = False
 
         # Track may now not point directly at via
         vecT = __NormalizeVector(end - start)
@@ -245,8 +287,13 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
         vpercent = vpercent*n/targetLength + minVpercent*(1-n/targetLength)
 
     # find point on the track, sharp end of the teardrop
-    pointB = start + wxPoint(vecT[0]*n + vecT[1]*w, vecT[1]*n - vecT[0]*w)
-    pointA = start + wxPoint(vecT[0]*n - vecT[1]*w, vecT[1]*n + vecT[0]*w)
+    if type(track) == PCB_ARC:
+        start, vecT = __FindPositionAndVectorAlongArc(track, n + consumed + backoff, trackReversed)
+        pointB = start + wxPoint( vecT[1]*w, -vecT[0]*w)
+        pointA = start + wxPoint(-vecT[1]*w,  vecT[0]*w)
+    else:
+        pointB = start + wxPoint(vecT[0]*n + vecT[1]*w, vecT[1]*n - vecT[0]*w)
+        pointA = start + wxPoint(vecT[0]*n - vecT[1]*w, vecT[1]*n + vecT[0]*w)
 
     # In some cases of very short, eccentric tracks the points can end up
     # inside the teardrop. If this happens just cancel adding it
