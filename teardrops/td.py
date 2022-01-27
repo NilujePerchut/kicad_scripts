@@ -229,7 +229,7 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
         vpercent = 100
 
     # ensure that start is at the via/pad end
-    if __PointDistance(end, via[0]) < radius:
+    if __PointDistance(start, via[0]) > radius:
         start, end = end, start
         trackReversed = True
 
