@@ -45,7 +45,7 @@
             <property name="minimum_size"></property>
             <property name="name">teardrop_gui</property>
             <property name="pos"></property>
-            <property name="size">450,415</property>
+            <property name="size">450,368</property>
             <property name="style">wxCAPTION|wxCLOSE_BOX|wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER</property>
             <property name="subclass">; ; forward_declare</property>
             <property name="title">Teardrops</property>
@@ -147,7 +147,7 @@
                                 <property name="vgap">0</property>
                                 <object class="sizeritem" expanded="0">
                                     <property name="border">5</property>
-                                    <property name="flag">wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxEXPAND|wxFIXED_MINSIZE</property>
+                                    <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxFIXED_MINSIZE</property>
                                     <property name="proportion">0</property>
                                     <object class="wxStaticText" expanded="0">
                                         <property name="BottomDockable">1</property>
@@ -270,7 +270,7 @@
                                 </object>
                                 <object class="sizeritem" expanded="0">
                                     <property name="border">5</property>
-                                    <property name="flag">wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxEXPAND|wxFIXED_MINSIZE</property>
+                                    <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxFIXED_MINSIZE</property>
                                     <property name="proportion">0</property>
                                     <object class="wxStaticText" expanded="0">
                                         <property name="BottomDockable">1</property>
@@ -393,7 +393,7 @@
                                 </object>
                                 <object class="sizeritem" expanded="0">
                                     <property name="border">5</property>
-                                    <property name="flag">wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxEXPAND|wxFIXED_MINSIZE</property>
+                                    <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxFIXED_MINSIZE</property>
                                     <property name="proportion">0</property>
                                     <object class="wxStaticText" expanded="0">
                                         <property name="BottomDockable">1</property>
@@ -518,7 +518,7 @@
                         </object>
                         <object class="sizeritem" expanded="0">
                             <property name="border">5</property>
-                            <property name="flag">wxALIGN_CENTER|wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL</property>
+                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL</property>
                             <property name="proportion">0</property>
                             <object class="wxStaticBitmap" expanded="0">
                                 <property name="BottomDockable">0</property>
@@ -597,7 +597,7 @@
                         <property name="permission">none</property>
                         <object class="sizeritem" expanded="0">
                             <property name="border">5</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND</property>
+                            <property name="flag">wxALIGN_LEFT|wxALL|wxEXPAND</property>
                             <property name="proportion">0</property>
                             <object class="wxCheckBox" expanded="0">
                                 <property name="BottomDockable">1</property>
@@ -661,7 +661,7 @@
                         </object>
                         <object class="sizeritem" expanded="0">
                             <property name="border">5</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND</property>
+                            <property name="flag">wxALIGN_LEFT|wxALL|wxEXPAND</property>
                             <property name="proportion">0</property>
                             <object class="wxCheckBox" expanded="0">
                                 <property name="BottomDockable">1</property>
@@ -725,7 +725,7 @@
                         </object>
                         <object class="sizeritem" expanded="0">
                             <property name="border">5</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND</property>
+                            <property name="flag">wxALIGN_LEFT|wxALL|wxEXPAND</property>
                             <property name="proportion">0</property>
                             <object class="wxCheckBox" expanded="0">
                                 <property name="BottomDockable">1</property>
@@ -789,7 +789,7 @@
                         </object>
                         <object class="sizeritem" expanded="0">
                             <property name="border">5</property>
-                            <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL|wxEXPAND</property>
+                            <property name="flag">wxALIGN_LEFT|wxALL|wxEXPAND</property>
                             <property name="proportion">0</property>
                             <object class="wxCheckBox" expanded="0">
                                 <property name="BottomDockable">1</property>
