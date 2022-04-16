@@ -11,7 +11,7 @@ from pcbnew import PCB_VIA, ToMM, PCB_TRACK, PCB_ARC, FromMM, wxPoint, GetBoard,
 from pcbnew import PAD_ATTRIB_PTH, PAD_ATTRIB_SMD, ZONE_FILLER, VECTOR2I
 from pcbnew import STARTPOINT, ENDPOINT, ZONE_SETTINGS, ZONE_CONNECTION_FULL, ZONE_FILL_MODE_POLYGONS
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 ToUnits = ToMM
 FromUnits = FromMM
