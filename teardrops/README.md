@@ -7,8 +7,16 @@ Teardrops created with this script use a specific priority (0x4242) to be recogn
 
 ![Teardrop dialog](rcs/screenshot.png?raw=true "Teardrop menu")
 
+## Supported Kicad versions
+
+The `master` branch supports Kicad V6.
+
+The `V5` branch supports Kicad V5 and V5.99
+
+For Kicad > V6 series (including V6.99), I STRONGLY suggest to use the kicad native teardrops. See https://forum.kicad.info/t/kicad6-99-finally-added-the-teardrop-feature-non-plugins/33192 for details.
+
 ## Install
-Just copy the teardrop folder into the ~/.kicad_plugins directory, then restart Kicad. The teardrop plugin should now be available in the Tools/External plugin menu.
+Just copy the teardrop folder into the `~/.local/share/kicad/6.0/scripting/plugins` directory, then restart Kicad. The teardrop plugin should now be available in the Tools/External plugin menu.
 
 ## Add Teardrops
 Select some vias/pads on which you want to add teardrops. Or don't select anything to apply teardrops on all vias/pads<br>
