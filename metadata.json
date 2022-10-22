@@ -1,0 +1,31 @@
+{
+    "$schema": "https://go.kicad.org/pcm/schemas/v1",
+    "name": "Teardrops",
+    "description": "Manages teardrops on a PCB",
+    "description_full": "Manages teardrops on a PCB",
+    "identifier": "com.github.NilujePerchut.kicad-scripts-teardrops",
+    "type": "plugin",
+    "author": {
+        "name": "NilujePerchut",
+        "contact": {
+            "web": "https://github.com/NilujePerchut"
+        }
+    },
+    "maintainer": {
+        "name": "NilujePerchut",
+        "contact": {
+            "web": "https://github.com/NilujePerchut"
+        }
+    },
+    "license": "BSD-3-Clause",
+    "resources": {
+        "homepage": "https://github.com/NilujePerchut/kicad_scripts"
+    },
+    "versions": [
+        {
+            "version": "1.0",
+            "status": "testing",
+            "kicad_version": "6.0"
+        }
+    ]
+}
