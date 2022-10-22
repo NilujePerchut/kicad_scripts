@@ -1,0 +1,16 @@
+name: package
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./package.sh
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: package.zip
+          tag_name: latest
