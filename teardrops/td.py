@@ -64,7 +64,7 @@ def __GetAllTeardrops(board):
     """Just retrieves all teardrops of the current board classified by net"""
     teardrops_zones = {}
     for zone in [board.GetArea(i) for i in range(board.GetAreaCount())]:
-        if zone.GetPriority() == MAGIC_TEARDROP_ZONE_ID:
+        if zone.GetAssignedPriority() == MAGIC_TEARDROP_ZONE_ID:
             netname = zone.GetNetname()
             if netname not in teardrops_zones.keys():
                 teardrops_zones[netname] = []
@@ -96,7 +96,7 @@ def __Zone(board, points, track):
     z.SetCornerSmoothingType(ZONE_SETTINGS.SMOOTHING_NONE)
     z.SetFillMode(ZONE_FILL_MODE_POLYGONS)
     z.SetIsFilled(True)
-    z.SetPriority(MAGIC_TEARDROP_ZONE_ID)
+    z.SetAssignedPriority(MAGIC_TEARDROP_ZONE_ID)
     ol = z.Outline()
     ol.NewOutline()
 
@@ -141,10 +141,10 @@ def __ComputeCurved(vpercent, w, vec, via, pts, segs):
     biasBC = 0.5 * __PointDistance(pts[1], pts[2])
     biasAE = 0.5 * __PointDistance(pts[4], pts[0])
 
-    vecC = pts[2] - via[0]
+    vecC = wxPoint(pts[2].x - via[0].x, pts[2].y - via[0].y)
     tangentC = [pts[2][0] - vecC[1]*biasBC*weaken,
                 pts[2][1] + vecC[0]*biasBC*weaken]
-    vecE = pts[4] - via[0]
+    vecE = wxPoint(pts[4].x - via[0].x, pts[4].y - via[0].y)
     tangentE = [pts[4][0] + vecE[1]*biasAE*weaken,
                 pts[4][1] - vecE[0]*biasAE*weaken]
 
@@ -247,14 +247,19 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     bdelta = FromMM(0.01)
     backoff = 0
     while backoff < radius:
-        np = start + wxPoint(vecT[0]*backoff, vecT[1]*backoff)
+        np = wxPoint(vecT[0]*backoff, vecT[1]*backoff)
+        np.x += start.x
+        np.y += start.y
         if __PointDistance(np, via[0]) >= radius:
             break
         backoff += bdelta
     start = np
 
     # vec now points from via to intersect point
-    vec = __NormalizeVector(start - via[0])
+    aux = wxPoint(via[0].x, via[0].y)
+    aux.x = start.x - aux.x
+    aux.y = start.y - aux.y
+    vec = __NormalizeVector(aux)
 
     # choose a teardrop length
     targetLength = via[1]*(hpercent/100.0)
@@ -281,7 +286,10 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
                 trackReversed = False
 
         # Track may now not point directly at via
-        vecT = __NormalizeVector(end - start)
+        aux = wxPoint(end.x, end.y)
+        aux.x = aux.x - start.x
+        aux.y = aux.y - start.y
+        vecT = __NormalizeVector(aux)
 
     # if shortened, shrink width too
     if n+consumed < targetLength:
@@ -291,11 +299,11 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     # find point on the track, sharp end of the teardrop
     if type(track) == PCB_ARC:
         start, vecT = __FindPositionAndVectorAlongArc(track, n + consumed + backoff, trackReversed)
-        pointB = start + wxPoint( vecT[1]*w, -vecT[0]*w)
-        pointA = start + wxPoint(-vecT[1]*w,  vecT[0]*w)
+        pointB = wxPoint(start.x + vecT[1]*w, start.y - vecT[0]*w)
+        pointA = wxPoint(start.x - vecT[1]*w, start.y + vecT[0]*w)
     else:
-        pointB = start + wxPoint(vecT[0]*n + vecT[1]*w, vecT[1]*n - vecT[0]*w)
-        pointA = start + wxPoint(vecT[0]*n - vecT[1]*w, vecT[1]*n + vecT[0]*w)
+        pointB = wxPoint(start.x + vecT[0]*n + vecT[1]*w, start.y + vecT[1]*n - vecT[0]*w)
+        pointA = wxPoint(start.x + vecT[0]*n - vecT[1]*w, start.y + vecT[1]*n + vecT[0]*w)
 
     # In some cases of very short, eccentric tracks the points can end up
     # inside the teardrop. If this happens just cancel adding it
@@ -326,12 +334,15 @@ def __ComputePoints(track, via, hpercent, vpercent, segs, follow_tracks,
     vecC = [vec[0]*cos(dC)+vec[1]*sin(dC), -vec[0]*sin(dC)+vec[1]*cos(dC)]
     vecE = [vec[0]*cos(dE)+vec[1]*sin(dE), -vec[0]*sin(dE)+vec[1]*cos(dE)]
 
-    pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
-    pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
+    #pointC = via[0] + wxPoint(int(vecC[0] * radius), int(vecC[1] * radius))
+    pointC = wxPoint(via[0].x + int(vecC[0] * radius), via[0].y + int(vecC[1] * radius))
+    #pointE = via[0] + wxPoint(int(vecE[0] * radius), int(vecE[1] * radius))
+    pointE = wxPoint(via[0].x + int(vecE[0] * radius), via[0].y + int(vecE[1] * radius))
 
     # Introduce a last point in order to cover the via centre.
     # If not, the zone won't be filled
-    pointD = via[0] + wxPoint(int(vec[0]*-0.5*radius), int(vec[1]*-0.5*radius))
+    pointD = wxPoint(via[0].x + int(vec[0]*-0.5*radius), via[0].y + int(vec[1]*-0.5*radius))
+    #pointD = via[0] + wxPoint(int(vec[0]*-0.5*radius), int(vec[1]*-0.5*radius))
 
     pts = [pointA, pointB, pointC, pointD, pointE]
     if segs > 2:
@@ -345,7 +356,7 @@ def __IsViaAndTrackInSameNetZone(pcb, via, track):
     same netname"""
     for zone in [pcb.GetArea(i) for i in range(pcb.GetAreaCount())]:
         # Exclude other Teardrops to speed up the process
-        if zone.GetPriority() == MAGIC_TEARDROP_ZONE_ID:
+        if zone.GetAssignedPriority() == MAGIC_TEARDROP_ZONE_ID:
             continue
 
         # Only consider zones on the same layer
