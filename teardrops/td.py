@@ -192,11 +192,12 @@ def __FindPositionAndVectorAlongArc(track, pos, trackReversed):
     # startAngle, endAngle are the absolute start and end.
     # angle is the included angle of the arc, negative if anticlockwise
     if trackReversed:
-        angle      = -track.GetAngle()
-        startAngle = track.GetArcAngleEnd()
+        angle      = -track.GetAngle().AsTenthsOfADegree()
+        startAngle = track.GetArcAngleEnd().AsTenthsOfADegree()
     else:
-        angle      = track.GetAngle()
-        startAngle = track.GetArcAngleStart()
+        angle      = track.GetAngle().AsTenthsOfADegree()
+        startAngle = track.GetArcAngleStart().AsTenthsOfADegree()
+
 
     posAngle = startAngle + angle * pos/length
 
